@@ -51,6 +51,15 @@ export default function AuthenticatedLayout({ header, children }) {
                                     <NavLink href={route('affectations.index')} active={route().current('affectations.index')}>
                                         Affectations
                                     </NavLink>
+                                    <NavLink href={route('roles.index')} active={route().current('roles.index')}>
+                                        Rôles
+                                    </NavLink>
+                                    <NavLink href={route('permissions.index')} active={route().current('permissions.index')}>
+                                        Permissions
+                                    </NavLink>
+                                    <NavLink href={route('users.index')} active={route().current('users.index')}>
+                                        Utilisateurs
+                                    </NavLink>
                                 </div>
                             </div>
                         </div>
@@ -177,6 +186,15 @@ export default function AuthenticatedLayout({ header, children }) {
                             </ResponsiveNavLink>
                             <ResponsiveNavLink href={route('affectations.index')} active={route().current('affectations.index')}>
                                 Affectations
+                            </ResponsiveNavLink>
+                            <ResponsiveNavLink href={route('roles.index')} active={route().current('roles.index')}>
+                                Rôles
+                            </ResponsiveNavLink>
+                            <ResponsiveNavLink href={route('permissions.index')} active={route().current('permissions.index')}>
+                                Permissions
+                            </ResponsiveNavLink>
+                            <ResponsiveNavLink href={route('users.index')} active={route().current('users.index')}>
+                                Utilisateurs
                             </ResponsiveNavLink>
                         </div>
                     </div>
