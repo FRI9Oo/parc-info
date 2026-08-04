@@ -22,14 +22,36 @@ export default function AuthenticatedLayout({ header, children }) {
                                     <ApplicationLogo className="block h-9 w-auto fill-current text-gray-800" />
                                 </Link>
                             </div>
-
                             <div className="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                                <NavLink
-                                    href={route('dashboard')}
-                                    active={route().current('dashboard')}
-                                >
-                                    Dashboard
-                                </NavLink>
+                                <div className="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                                    <NavLink href={route('dashboard')} active={route().current('dashboard')}>
+                                        Dashboard
+                                    </NavLink>
+                                    <NavLink href={route('directions.index')} active={route().current('directions.index')}>
+                                        Directions
+                                    </NavLink>
+                                    <NavLink href={route('departements.index')} active={route().current('departements.index')}>
+                                        Départements
+                                    </NavLink>
+                                    <NavLink href={route('divisions.index')} active={route().current('divisions.index')}>
+                                        Divisions
+                                    </NavLink>
+                                    <NavLink href={route('services.index')} active={route().current('services.index')}>
+                                        Services
+                                    </NavLink>
+                                    <NavLink href={route('employes.index')} active={route().current('employes.index')}>
+                                        Employés
+                                    </NavLink>
+                                    <NavLink href={route('materiels.index')} active={route().current('materiels.index')}>
+                                        Matériels
+                                    </NavLink>
+                                    <NavLink href={route('categories.index')} active={route().current('categories.index')}>
+                                        Catégories
+                                    </NavLink>
+                                    <NavLink href={route('affectations.index')} active={route().current('affectations.index')}>
+                                        Affectations
+                                    </NavLink>
+                                </div>
                             </div>
                         </div>
 
@@ -128,12 +150,35 @@ export default function AuthenticatedLayout({ header, children }) {
                     }
                 >
                     <div className="space-y-1 pb-3 pt-2">
-                        <ResponsiveNavLink
-                            href={route('dashboard')}
-                            active={route().current('dashboard')}
-                        >
-                            Dashboard
-                        </ResponsiveNavLink>
+                        <div className="space-y-1 pb-3 pt-2">
+                            <ResponsiveNavLink href={route('dashboard')} active={route().current('dashboard')}>
+                                Dashboard
+                            </ResponsiveNavLink>
+                            <ResponsiveNavLink href={route('directions.index')} active={route().current('directions.index')}>
+                                Directions
+                            </ResponsiveNavLink>
+                            <ResponsiveNavLink href={route('departements.index')} active={route().current('departements.index')}>
+                                Départements
+                            </ResponsiveNavLink>
+                            <ResponsiveNavLink href={route('divisions.index')} active={route().current('divisions.index')}>
+                                Divisions
+                            </ResponsiveNavLink>
+                            <ResponsiveNavLink href={route('services.index')} active={route().current('services.index')}>
+                                Services
+                            </ResponsiveNavLink>
+                            <ResponsiveNavLink href={route('employes.index')} active={route().current('employes.index')}>
+                                Employés
+                            </ResponsiveNavLink>
+                            <ResponsiveNavLink href={route('materiels.index')} active={route().current('materiels.index')}>
+                                Matériels
+                            </ResponsiveNavLink>
+                            <ResponsiveNavLink href={route('categories.index')} active={route().current('categories.index')}>
+                                Catégories
+                            </ResponsiveNavLink>
+                            <ResponsiveNavLink href={route('affectations.index')} active={route().current('affectations.index')}>
+                                Affectations
+                            </ResponsiveNavLink>
+                        </div>
                     </div>
 
                     <div className="border-t border-gray-200 pb-1 pt-4">

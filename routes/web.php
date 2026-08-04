@@ -7,6 +7,8 @@ use App\Http\Controllers\DivisionController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\CategorieController;
 use App\Http\Controllers\MaterielController;
+use App\Http\Controllers\EmployeController;
+use App\Http\Controllers\AffectationMaterielController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -52,6 +54,20 @@ Route::middleware('auth')->group(function () {
     Route::post('/services', [ServiceController::class, 'store'])->name('services.store');
     Route::put('/services/{service}', [ServiceController::class, 'update'])->name('services.update');
     Route::delete('/services/{service}', [ServiceController::class, 'destroy'])->name('services.destroy');
+
+    // Employes
+    Route::get('/employes', [EmployeController::class, 'index'])->name('employes.index');
+    Route::post('/employes', [EmployeController::class, 'store'])->name('employes.store');
+    Route::put('/employes/{employe}', [EmployeController::class, 'update'])->name('employes.update');
+    Route::delete('/employes/{employe}', [EmployeController::class, 'destroy'])->name('employes.destroy');
+
+    // Affectations
+    Route::get('/affectations', [AffectationMaterielController::class, 'index'])->name('affectations.index');
+    Route::post('/affectations', [AffectationMaterielController::class, 'store'])->name('affectations.store');
+    Route::put('/affectations/{affectation}', [AffectationMaterielController::class, 'update'])->name('affectations.update');
+    Route::put('/affectations/{affectation}/restituer', [AffectationMaterielController::class, 'restituer'])->name('affectations.restituer');
+    Route::put('/affectations/{affectation}/cancel-restitution', [AffectationMaterielController::class, 'cancelRestitution'])->name('affectations.cancel-restitution');
+    Route::delete('/affectations/{affectation}', [AffectationMaterielController::class, 'destroy'])->name('affectations.destroy');
 });
 
 Route::get('/categories', [CategorieController::class, 'index'])->name('categories.index');
