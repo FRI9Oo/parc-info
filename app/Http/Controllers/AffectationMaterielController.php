@@ -7,32 +7,27 @@ use App\Models\Employe;
 use App\Models\Materiel;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Carbon\Carbon;
 
 class AffectationMaterielController extends Controller
 {
     public function index()
     {
-        $affectations = AffectationMateriel::with(['employe.service', 'materiel.categorie'])
+        $affectations = AffectationMateriel::with(['employe', 'materiel.categorie'])
             ->orderByDesc('date_affectation')
+            ->orderByDesc('id')
             ->get();
 
-        // Add status to each affectation
-        $affectations->each(function ($affectation) {
-            $affectation->status = $affectation->getStatusAttribute();
-            $affectation->status_color = $affectation->getStatusColorAttribute();
-        });
-
-        // Get available materials - only those not currently affected
-        $materiels = Materiel::whereDoesntHave('affectations', function ($q) {
-            $q->whereNull('date_restitution')
-                ->orWhere('date_restitution', '>', Carbon::today()->toDateString());
-        })->get();
+        // Only materiels with no open (non-clôturé) affectation are assignable
+        $materielsDisponibles = Materiel::with('categorie')
+            ->whereDoesntHave('affectations', function ($q) {
+                $q->whereNull('date_restitution');
+            })
+            ->get();
 
         return Inertia::render('Affectations/Index', [
             'affectations' => $affectations,
             'employes' => Employe::orderBy('nom')->get(),
-            'materiels' => $materiels,
+            'materiels' => $materielsDisponibles,
         ]);
     }
 
@@ -44,12 +39,8 @@ class AffectationMaterielController extends Controller
             'date_affectation' => 'required|date',
         ]);
 
-        // Check if material is already affected (no restitution date or future restitution date)
         $dejaAffecte = AffectationMateriel::where('materiel_id', $validated['materiel_id'])
-            ->where(function ($q) {
-                $q->whereNull('date_restitution')
-                    ->orWhere('date_restitution', '>', Carbon::today()->toDateString());
-            })
+            ->whereNull('date_restitution')
             ->exists();
 
         if ($dejaAffecte) {
@@ -65,20 +56,21 @@ class AffectationMaterielController extends Controller
 
     public function update(Request $request, AffectationMateriel $affectation)
     {
+        if (! is_null($affectation->date_restitution)) {
+            return redirect()->back()->withErrors([
+                'modifier' => 'Cette affectation est clôturée et ne peut plus être modifiée.',
+            ]);
+        }
+
         $validated = $request->validate([
             'employe_id' => 'required|exists:employes,id',
             'materiel_id' => 'required|exists:materiels,id',
             'date_affectation' => 'required|date',
         ]);
 
-        // Check if the material is already affected by another affectation
-        // (excluding the current one)
         $dejaAffecte = AffectationMateriel::where('materiel_id', $validated['materiel_id'])
             ->where('id', '!=', $affectation->id)
-            ->where(function ($q) {
-                $q->whereNull('date_restitution')
-                    ->orWhere('date_restitution', '>', Carbon::today()->toDateString());
-            })
+            ->whereNull('date_restitution')
             ->exists();
 
         if ($dejaAffecte) {
@@ -87,51 +79,51 @@ class AffectationMaterielController extends Controller
             ]);
         }
 
-        // If the restitution date is set and is before the new affectation date, it's invalid
-        if ($affectation->date_restitution && $affectation->date_restitution < $validated['date_affectation']) {
-            return redirect()->back()->withErrors([
-                'date_affectation' => 'La date d\'affectation ne peut pas être après la date de restitution.',
-            ]);
-        }
-
         $affectation->update($validated);
 
         return redirect()->back()->with('success', 'Affectation modifiée avec succès.');
     }
 
-    public function restituer(Request $request, AffectationMateriel $affectation)
+    public function cloturer(Request $request, AffectationMateriel $affectation)
     {
-        // Calculate minimum date (affectation date + 1 day)
-        $minDate = Carbon::parse($affectation->date_affectation)->addDay()->toDateString();
-        
+        if (! is_null($affectation->date_restitution)) {
+            return redirect()->back()->withErrors([
+                'cloture' => 'Cette affectation est déjà clôturée.',
+            ]);
+        }
+
         $validated = $request->validate([
-            'date_restitution' => [
+            'date_cloture' => [
                 'required',
                 'date',
-                'after_or_equal:' . $minDate,
+                'after_or_equal:' . $affectation->date_affectation->format('Y-m-d'),
             ],
         ]);
 
-        $affectation->update($validated);
+        $affectation->update([
+            'date_restitution' => $validated['date_cloture'],
+        ]);
 
-        return redirect()->back()->with('success', 'Date de restitution planifiée avec succès.');
+        return redirect()->back()->with('success', 'Affectation clôturée avec succès.');
     }
 
-    public function cancelRestitution(Request $request, AffectationMateriel $affectation)
+    public function annulerCloture(AffectationMateriel $affectation)
     {
-        if ($affectation->date_restitution) {
-            $affectation->update(['date_restitution' => null]);
-            return redirect()->back()->with('success', 'Planification de restitution annulée.');
+        if (is_null($affectation->date_restitution)) {
+            return redirect()->back()->withErrors([
+                'cloture' => "Cette affectation n'est pas clôturée.",
+            ]);
         }
 
-        return redirect()->back()->withErrors([
-            'cancel' => 'Aucune restitution à annuler.',
-        ]);
+        $affectation->update(['date_restitution' => null]);
+
+        return redirect()->back()->with('success', 'Clôture annulée, affectation réactivée.');
     }
 
     public function destroy(AffectationMateriel $affectation)
     {
         $affectation->delete();
+
         return redirect()->back()->with('success', 'Affectation supprimée avec succès.');
     }
 }

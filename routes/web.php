@@ -65,8 +65,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/affectations', [AffectationMaterielController::class, 'index'])->name('affectations.index');
     Route::post('/affectations', [AffectationMaterielController::class, 'store'])->name('affectations.store');
     Route::put('/affectations/{affectation}', [AffectationMaterielController::class, 'update'])->name('affectations.update');
-    Route::put('/affectations/{affectation}/restituer', [AffectationMaterielController::class, 'restituer'])->name('affectations.restituer');
-    Route::put('/affectations/{affectation}/cancel-restitution', [AffectationMaterielController::class, 'cancelRestitution'])->name('affectations.cancel-restitution');
+    Route::put('/affectations/{affectation}/cloturer', [AffectationMaterielController::class, 'cloturer'])->name('affectations.cloturer');
+    Route::put('/affectations/{affectation}/annuler-cloture', [AffectationMaterielController::class, 'annulerCloture'])->name('affectations.annuler-cloture');
     Route::delete('/affectations/{affectation}', [AffectationMaterielController::class, 'destroy'])->name('affectations.destroy');
 });
 
