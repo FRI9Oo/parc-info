@@ -17,10 +17,10 @@ class AffectationMaterielController extends Controller
             ->orderByDesc('id')
             ->get();
 
-        // Only materiels with no open (non-clôturé) affectation are assignable
+        // Only materiels with no currently-active affectation (as of today) are assignable
         $materielsDisponibles = Materiel::with('categorie')
             ->whereDoesntHave('affectations', function ($q) {
-                $q->whereNull('date_restitution');
+                $q->occupantMateriel();
             })
             ->get();
 
@@ -39,13 +39,9 @@ class AffectationMaterielController extends Controller
             'date_affectation' => 'required|date',
         ]);
 
-        $dejaAffecte = AffectationMateriel::where('materiel_id', $validated['materiel_id'])
-            ->whereNull('date_restitution')
-            ->exists();
-
-        if ($dejaAffecte) {
+        if ($this->hasOverlap($validated['materiel_id'], $validated['date_affectation'], null)) {
             return redirect()->back()->withErrors([
-                'materiel_id' => 'Ce matériel est déjà affecté.',
+                'materiel_id' => 'Ce matériel est déjà en possession d\'un autre employé sur cette période.',
             ]);
         }
 
@@ -58,7 +54,7 @@ class AffectationMaterielController extends Controller
     {
         if (! is_null($affectation->date_restitution)) {
             return redirect()->back()->withErrors([
-                'modifier' => 'Cette affectation est clôturée et ne peut plus être modifiée.',
+                'modifier' => 'Cette affectation est clôturée. Utilisez "Modifier la clôture" pour corriger la date de restitution.',
             ]);
         }
 
@@ -68,14 +64,9 @@ class AffectationMaterielController extends Controller
             'date_affectation' => 'required|date',
         ]);
 
-        $dejaAffecte = AffectationMateriel::where('materiel_id', $validated['materiel_id'])
-            ->where('id', '!=', $affectation->id)
-            ->whereNull('date_restitution')
-            ->exists();
-
-        if ($dejaAffecte) {
+        if ($this->hasOverlap($validated['materiel_id'], $validated['date_affectation'], null, $affectation->id)) {
             return redirect()->back()->withErrors([
-                'materiel_id' => 'Ce matériel est déjà affecté à un autre employé.',
+                'materiel_id' => 'Ce matériel est déjà en possession d\'un autre employé sur cette période.',
             ]);
         }
 
@@ -84,14 +75,15 @@ class AffectationMaterielController extends Controller
         return redirect()->back()->with('success', 'Affectation modifiée avec succès.');
     }
 
+    /**
+     * Close an open affectation, or correct the restitution date of an
+     * already-closed one — same endpoint handles both. Either way, the
+     * resulting period is checked against every other affectation of the
+     * same matériel so two employees can never end up shown as possessing
+     * it at the same time.
+     */
     public function cloturer(Request $request, AffectationMateriel $affectation)
     {
-        if (! is_null($affectation->date_restitution)) {
-            return redirect()->back()->withErrors([
-                'cloture' => 'Cette affectation est déjà clôturée.',
-            ]);
-        }
-
         $validated = $request->validate([
             'date_cloture' => [
                 'required',
@@ -99,6 +91,17 @@ class AffectationMaterielController extends Controller
                 'after_or_equal:' . $affectation->date_affectation->format('Y-m-d'),
             ],
         ]);
+
+        if ($this->hasOverlap(
+            $affectation->materiel_id,
+            $affectation->date_affectation->format('Y-m-d'),
+            $validated['date_cloture'],
+            $affectation->id
+        )) {
+            return redirect()->back()->withErrors([
+                'cloture' => 'Attention : cette date de clôture chevauche une autre affectation de ce matériel. Cela créerait une contradiction sur qui le possède.',
+            ]);
+        }
 
         $affectation->update([
             'date_restitution' => $validated['date_cloture'],
@@ -115,6 +118,17 @@ class AffectationMaterielController extends Controller
             ]);
         }
 
+        if ($this->hasOverlap(
+            $affectation->materiel_id,
+            $affectation->date_affectation->format('Y-m-d'),
+            null,
+            $affectation->id
+        )) {
+            return redirect()->back()->withErrors([
+                'cloture' => 'Impossible d\'annuler la clôture : ce matériel est actuellement en possession d\'un autre employé.',
+            ]);
+        }
+
         $affectation->update(['date_restitution' => null]);
 
         return redirect()->back()->with('success', 'Clôture annulée, affectation réactivée.');
@@ -125,5 +139,31 @@ class AffectationMaterielController extends Controller
         $affectation->delete();
 
         return redirect()->back()->with('success', 'Affectation supprimée avec succès.');
+    }
+
+    /**
+     * Does the given [date_affectation, date_restitution] period for a
+     * matériel overlap any other affectation of that same matériel?
+     * A null date_restitution is treated as "still ongoing" (open-ended).
+     */
+    private function hasOverlap(int $materielId, string $dateAffectation, ?string $dateRestitution, ?int $excludeId = null): bool
+    {
+        $newStart = $dateAffectation;
+        $newEnd = $dateRestitution ?? '9999-12-31';
+
+        $others = AffectationMateriel::where('materiel_id', $materielId)
+            ->when($excludeId, fn ($q) => $q->where('id', '!=', $excludeId))
+            ->get();
+
+        foreach ($others as $other) {
+            $otherStart = $other->date_affectation->format('Y-m-d');
+            $otherEnd = $other->date_restitution?->format('Y-m-d') ?? '9999-12-31';
+
+            if ($newStart <= $otherEnd && $otherStart <= $newEnd) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

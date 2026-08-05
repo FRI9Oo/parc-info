@@ -30,9 +30,27 @@ class AffectationMateriel extends Model
 
     /**
      * "Affecté" while date_restitution is null, "Clôturé" once it's set.
+     * Note: this is the administrative status of the record. It's still
+     * possible for a "Clôturé" record to represent a matériel that is
+     * physically not yet returned — see scopeOccupantMateriel().
      */
     public function getEtatAttribute()
     {
         return is_null($this->date_restitution) ? 'Affecté' : 'Clôturé';
+    }
+
+    /**
+     * Affectations that still hold the matériel today: either never
+     * clôturée, or clôturée with a restitution date that hasn't arrived
+     * yet. This is the single source of truth for "is this matériel
+     * currently unavailable" — used everywhere availability is checked
+     * so a matériel can never end up assigned to two employees at once.
+     */
+    public function scopeOccupantMateriel($query)
+    {
+        return $query->where(function ($q) {
+            $q->whereNull('date_restitution')
+              ->orWhereDate('date_restitution', '>', now()->toDateString());
+        });
     }
 }

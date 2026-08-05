@@ -80,7 +80,7 @@ export default function Index({ affectations, employes, materiels }) {
     // ---------- Voir ----------
     const [voirAffectation, setVoirAffectation] = useState(null);
 
-    // ---------- Modifier ----------
+    // ---------- Modifier (employe / materiel / date_affectation, open only) ----------
     const [editState, setEditState] = useState(null);
 
     const editMateriels = useMemo(() => {
@@ -130,15 +130,19 @@ export default function Index({ affectations, employes, materiels }) {
         );
     };
 
-    // ---------- Clôturer ----------
+    // ---------- Clôturer / Modifier la clôture ----------
     const [clotureState, setClotureState] = useState(null);
 
     const openCloturer = (a) => {
         const minDate = getDateForInput(a.date_affectation);
+        const isEditing = a.etat === 'Clôturé';
         setClotureState({
             id: a.id,
             minDate,
-            date_cloture: today >= minDate ? today : minDate,
+            date_cloture: isEditing
+                ? getDateForInput(a.date_restitution)
+                : (today >= minDate ? today : minDate),
+            isEditing,
         });
     };
 
@@ -250,7 +254,7 @@ export default function Index({ affectations, employes, materiels }) {
                     {pageErrors?.modifier && (
                         <div className="mb-4 bg-red-50 text-red-700 text-sm p-3 rounded">{pageErrors.modifier}</div>
                     )}
-                    {pageErrors?.cloture && (
+                    {pageErrors?.cloture && !clotureState && (
                         <div className="mb-4 bg-red-50 text-red-700 text-sm p-3 rounded">{pageErrors.cloture}</div>
                     )}
 
@@ -362,7 +366,10 @@ export default function Index({ affectations, employes, materiels }) {
                                                         </>
                                                     )}
                                                     {a.etat === 'Clôturé' && (
-                                                        <button onClick={() => annulerCloture(a)} className="text-orange-600 text-sm font-medium hover:text-orange-800">Annuler clôture</button>
+                                                        <>
+                                                            <button onClick={() => openCloturer(a)} className="text-blue-600 text-sm font-medium hover:text-blue-800">Modifier la clôture</button>
+                                                            <button onClick={() => annulerCloture(a)} className="text-orange-600 text-sm font-medium hover:text-orange-800">Annuler clôture</button>
+                                                        </>
                                                     )}
                                                     <button onClick={() => imprimer(a)} className="text-purple-600 text-sm font-medium hover:text-purple-800">Imprimer</button>
                                                     <button onClick={() => destroy(a.id)} className="text-red-600 text-sm font-medium hover:text-red-800">Supprimer</button>
@@ -402,7 +409,7 @@ export default function Index({ affectations, employes, materiels }) {
                 )}
             </Modal>
 
-            {/* Modal Modifier */}
+            {/* Modal Modifier (employé / matériel / date d'affectation) */}
             <Modal show={!!editState} onClose={() => setEditState(null)} maxWidth="lg">
                 {editState && (
                     <div className="p-6 space-y-3">
@@ -465,11 +472,13 @@ export default function Index({ affectations, employes, materiels }) {
                 )}
             </Modal>
 
-            {/* Modal Clôturer */}
+            {/* Modal Clôturer / Modifier la clôture */}
             <Modal show={!!clotureState} onClose={() => setClotureState(null)} maxWidth="sm">
                 {clotureState && (
                     <div className="p-6 space-y-3">
-                        <h2 className="text-lg font-medium mb-2">Clôturer l'affectation</h2>
+                        <h2 className="text-lg font-medium mb-2">
+                            {clotureState.isEditing ? 'Modifier la date de clôture' : "Clôturer l'affectation"}
+                        </h2>
                         <label className="block text-sm text-gray-700">Date de clôture</label>
                         <input
                             type="date"
@@ -479,13 +488,18 @@ export default function Index({ affectations, employes, materiels }) {
                             className="border rounded px-3 py-2 w-full"
                             autoFocus
                         />
+                        {pageErrors?.cloture && (
+                            <p className="text-red-600 text-sm">{pageErrors.cloture}</p>
+                        )}
                         <p className="text-xs text-gray-500">
-                            Une fois clôturée, cette affectation devient historique et le matériel redevient disponible pour une nouvelle affectation.
+                            {clotureState.isEditing
+                                ? 'Si la nouvelle date chevauche une autre affectation de ce matériel, la modification sera refusée.'
+                                : 'Une fois clôturée, le matériel redevient disponible pour une nouvelle affectation à partir de cette date.'}
                         </p>
                         <div className="flex justify-end gap-3 pt-2">
                             <button onClick={() => setClotureState(null)} className="text-gray-500 text-sm">Annuler</button>
                             <button onClick={confirmCloture} className="bg-indigo-600 text-white px-4 py-2 rounded text-sm hover:bg-indigo-700">
-                                Confirmer la clôture
+                                {clotureState.isEditing ? 'Enregistrer' : 'Confirmer la clôture'}
                             </button>
                         </div>
                     </div>

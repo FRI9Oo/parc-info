@@ -12,6 +12,7 @@ use App\Http\Controllers\AffectationMaterielController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\DashboardController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -25,9 +26,9 @@ Route::get('/', function () {
     ]);
 });
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -64,6 +65,18 @@ Route::middleware('auth')->group(function () {
     Route::put('/employes/{employe}', [EmployeController::class, 'update'])->name('employes.update');
     Route::delete('/employes/{employe}', [EmployeController::class, 'destroy'])->name('employes.destroy');
 
+    // Categories
+    Route::get('/categories', [CategorieController::class, 'index'])->name('categories.index');
+    Route::post('/categories', [CategorieController::class, 'store'])->name('categories.store');
+    Route::put('/categories/{categorie}', [CategorieController::class, 'update'])->name('categories.update');
+    Route::delete('/categories/{categorie}', [CategorieController::class, 'destroy'])->name('categories.destroy');
+
+    // Materiels
+    Route::get('/materiels', [MaterielController::class, 'index'])->name('materiels.index');
+    Route::post('/materiels', [MaterielController::class, 'store'])->name('materiels.store');
+    Route::put('/materiels/{materiel}', [MaterielController::class, 'update'])->name('materiels.update');
+    Route::delete('/materiels/{materiel}', [MaterielController::class, 'destroy'])->name('materiels.destroy');
+
     // Affectations
     Route::get('/affectations', [AffectationMaterielController::class, 'index'])->name('affectations.index');
     Route::post('/affectations', [AffectationMaterielController::class, 'store'])->name('affectations.store');
@@ -88,11 +101,5 @@ Route::middleware('auth')->group(function () {
     Route::get('/utilisateurs', [UserController::class, 'index'])->name('users.index');
     Route::put('/utilisateurs/{user}/role', [UserController::class, 'updateRole'])->name('users.update-role');
 });
-
-Route::get('/categories', [CategorieController::class, 'index'])->name('categories.index');
-Route::post('/categories', [CategorieController::class, 'store'])->name('categories.store');
-
-Route::get('/materiels', [MaterielController::class, 'index'])->name('materiels.index');
-Route::post('/materiels', [MaterielController::class, 'store'])->name('materiels.store');
 
 require __DIR__.'/auth.php';
