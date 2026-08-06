@@ -7,6 +7,34 @@ export default function Index({ affectations, employes, materiels }) {
     const { errors: pageErrors } = usePage().props;
     const today = new Date().toISOString().slice(0, 10);
 
+    // ---------- Search & Filter State ----------
+    const [searchQuery, setSearchQuery] = useState('');
+    const [etatFilter, setEtatFilter] = useState('all');
+
+    const filteredAffectations = useMemo(() => {
+        return affectations.filter((a) => {
+            if (etatFilter === 'affecte' && a.etat !== 'Affecté') return false;
+            if (etatFilter === 'cloture' && a.etat !== 'Clôturé') return false;
+
+            if (searchQuery.trim()) {
+                const q = searchQuery.toLowerCase().trim();
+                const matchEmpNom = a.employe?.nom?.toLowerCase().includes(q);
+                const matchEmpPrenom = a.employe?.prenom?.toLowerCase().includes(q);
+                const matchMatricule = a.employe?.matricule?.toLowerCase().includes(q);
+                const matchMatNom = a.materiel?.nom?.toLowerCase().includes(q);
+                const matchMarque = a.materiel?.marque?.toLowerCase().includes(q);
+                const matchModele = a.materiel?.modele?.toLowerCase().includes(q);
+                const matchSerie = a.materiel?.numero_serie?.toLowerCase().includes(q);
+                const matchInv = a.materiel?.numero_inventaire?.toLowerCase().includes(q);
+                const matchCat = a.materiel?.categorie?.nom_categorie?.toLowerCase().includes(q);
+
+                return matchEmpNom || matchEmpPrenom || matchMatricule || matchMatNom || matchMarque || matchModele || matchSerie || matchInv || matchCat;
+            }
+
+            return true;
+        });
+    }, [affectations, searchQuery, etatFilter]);
+
     const hasOverlap = (materielId, start, end, excludeId = null) => {
         const newStart = start;
         const newEnd = end || '9999-12-31';
@@ -344,7 +372,29 @@ export default function Index({ affectations, employes, materiels }) {
 
                     {/* Tableau */}
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                        <h1 className="text-xl font-semibold mb-4">Historique des affectations</h1>
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                            <h1 className="text-xl font-semibold text-gray-800">Historique des affectations ({filteredAffectations.length})</h1>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1 md:max-w-xl">
+                                <input
+                                    type="text"
+                                    placeholder="Rechercher (Employé, Matériel, S/N, Inv...)"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="border rounded px-3 py-1.5 text-sm w-full"
+                                />
+
+                                <select
+                                    value={etatFilter}
+                                    onChange={(e) => setEtatFilter(e.target.value)}
+                                    className="border rounded px-3 py-1.5 text-sm w-full bg-white"
+                                >
+                                    <option value="all">Tous les états</option>
+                                    <option value="affecte">Affectés seulement</option>
+                                    <option value="cloture">Clôturés seulement</option>
+                                </select>
+                            </div>
+                        </div>
 
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
@@ -366,7 +416,7 @@ export default function Index({ affectations, employes, materiels }) {
                                     </tr>
                                 </thead>
                                 <tbody className="text-sm">
-                                    {affectations.map((a) => (
+                                    {filteredAffectations.map((a) => (
                                         <tr key={a.id} className="border-b hover:bg-gray-50 transition">
                                             <td className="py-2 px-3 whitespace-nowrap">{formatDate(a.date_affectation)}</td>
                                             <td className="py-2 px-3 whitespace-nowrap">{a.employe?.nom}</td>

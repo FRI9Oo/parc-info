@@ -27,10 +27,13 @@ class AffectationTest extends TestCase
     {
         parent::setUp();
 
+        $adminRole = \App\Models\Role::create(['nom_role' => 'Administrateur']);
+
         $this->user = User::create([
             'name' => 'Test User',
             'email' => 'test@example.com',
             'password' => bcrypt('password'),
+            'role_id' => $adminRole->id,
         ]);
 
         $direction = Direction::create(['nom_direction' => 'Direction SI']);

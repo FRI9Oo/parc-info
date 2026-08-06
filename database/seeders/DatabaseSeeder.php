@@ -260,5 +260,21 @@ class DatabaseSeeder extends Seeder
             'role_id' => $managerRole->id,
             'employe_id' => $emp2->id,
         ]);
+
+        User::create([
+            'name' => 'Consultant SI',
+            'email' => 'consultant@example.com',
+            'password' => Hash::make('password'),
+            'role_id' => $viewerRole->id,
+            'employe_id' => $emp3->id,
+        ]);
+
+        User::create([
+            'name' => 'Employé Utilisateur',
+            'email' => 'user@example.com',
+            'password' => Hash::make('password'),
+            'role_id' => null,
+            'employe_id' => $emp4->id,
+        ]);
     }
 }

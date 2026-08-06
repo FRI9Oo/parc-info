@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Materiel;
 use App\Models\Categorie;
+use App\Models\Materiel;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -11,9 +11,32 @@ class MaterielController extends Controller
 {
     public function index()
     {
+        $materiels = Materiel::with(['categorie', 'affectations' => function ($q) {
+            $q->occupantMateriel()->with('employe');
+        }])->withCount('affectations')->get()->map(function ($m) {
+            $currentAffectation = $m->affectations->first();
+
+            return [
+                'id' => $m->id,
+                'nom' => $m->nom,
+                'marque' => $m->marque,
+                'modele' => $m->modele,
+                'numero_serie' => $m->numero_serie,
+                'numero_inventaire' => $m->numero_inventaire,
+                'caracteristique' => $m->caracteristique,
+                'categorie_id' => $m->categorie_id,
+                'categorie' => $m->categorie,
+                'affectations_count' => $m->affectations_count,
+                'is_disponible' => is_null($currentAffectation),
+                'occupant' => $currentAffectation && $currentAffectation->employe
+                    ? ($currentAffectation->employe->nom . ' ' . $currentAffectation->employe->prenom)
+                    : null,
+            ];
+        });
+
         return Inertia::render('Materiels/Index', [
-            'materiels' => Materiel::with('categorie')->withCount('affectations')->get(),
-            'categories' => Categorie::all(),
+            'materiels' => $materiels,
+            'categories' => Categorie::orderBy('nom_categorie')->get(),
         ]);
     }
 
@@ -31,7 +54,7 @@ class MaterielController extends Controller
 
         Materiel::create($validated);
 
-        return redirect()->back();
+        return redirect()->back()->with('success', 'Matériel créé avec succès.');
     }
 
     public function update(Request $request, Materiel $materiel)
@@ -48,7 +71,7 @@ class MaterielController extends Controller
 
         $materiel->update($validated);
 
-        return redirect()->back();
+        return redirect()->back()->with('success', 'Matériel mis à jour avec succès.');
     }
 
     public function destroy(Materiel $materiel)
@@ -61,6 +84,6 @@ class MaterielController extends Controller
 
         $materiel->delete();
 
-        return redirect()->back();
+        return redirect()->back()->with('success', 'Matériel supprimé avec succès.');
     }
 }

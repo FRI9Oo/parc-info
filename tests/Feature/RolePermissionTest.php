@@ -20,10 +20,13 @@ class RolePermissionTest extends TestCase
     {
         parent::setUp();
 
+        $adminRole = Role::create(['nom_role' => 'Administrateur']);
+
         $this->admin = User::create([
             'name' => 'Admin User',
             'email' => 'admin@example.com',
             'password' => bcrypt('password'),
+            'role_id' => $adminRole->id,
         ]);
 
         $this->perm1 = Permission::create([
