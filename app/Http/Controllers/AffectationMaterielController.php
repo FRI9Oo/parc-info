@@ -17,17 +17,10 @@ class AffectationMaterielController extends Controller
             ->orderByDesc('id')
             ->get();
 
-        // Only materiels with no currently-active affectation (as of today) are assignable
-        $materielsDisponibles = Materiel::with('categorie')
-            ->whereDoesntHave('affectations', function ($q) {
-                $q->occupantMateriel();
-            })
-            ->get();
-
         return Inertia::render('Affectations/Index', [
             'affectations' => $affectations,
             'employes' => Employe::orderBy('nom')->get(),
-            'materiels' => $materielsDisponibles,
+            'materiels' => Materiel::with('categorie')->get(), // ALL materiels, not a filtered "disponibles" list
         ]);
     }
 

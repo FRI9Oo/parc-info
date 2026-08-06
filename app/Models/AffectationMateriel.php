@@ -34,11 +34,19 @@ class AffectationMateriel extends Model
      * possible for a "Clôturé" record to represent a matériel that is
      * physically not yet returned — see scopeOccupantMateriel().
      */
+    // app/Models/AffectationMateriel.php
+
     public function getEtatAttribute()
     {
-        return is_null($this->date_restitution) ? 'Affecté' : 'Clôturé';
-    }
+        if (is_null($this->date_restitution)) {
+            return 'Affecté';
+        }
 
+        // Still considered "Affecté" until the restitution date is actually reached
+        return $this->date_restitution->format('Y-m-d') > now()->toDateString()
+            ? 'Affecté'
+            : 'Clôturé';
+    }
     /**
      * Affectations that still hold the matériel today: either never
      * clôturée, or clôturée with a restitution date that hasn't arrived

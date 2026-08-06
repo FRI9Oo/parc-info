@@ -6,6 +6,18 @@ import { useMemo, useState } from 'react';
 export default function Index({ affectations, employes, materiels }) {
     const { errors: pageErrors } = usePage().props;
     const today = new Date().toISOString().slice(0, 10);
+    // Add near the top of the component, after `today` is defined
+    const hasOverlap = (materielId, start, end, excludeId = null) => {
+        const newStart = start;
+        const newEnd = end || '9999-12-31';
+        return affectations.some((a) => {
+            if (a.materiel?.id !== materielId) return false;
+            if (excludeId && a.id === excludeId) return false;
+            const otherStart = (a.date_affectation || '').slice(0, 10);
+            const otherEnd = a.date_restitution ? a.date_restitution.slice(0, 10) : '9999-12-31';
+            return newStart <= otherEnd && otherStart <= newEnd;
+        });
+    };
 
     // ---------- helpers ----------
     const formatDate = (dateString) => {
@@ -49,11 +61,13 @@ export default function Index({ affectations, employes, materiels }) {
 
     const matchedMateriel = useMemo(() => {
         if (!addData.search_value.trim()) return null;
-        return materiels.find((m) => {
+        const found = materiels.find((m) => {
             const val = addData.search_type === 'serie' ? m.numero_serie : m.numero_inventaire;
             return val && val.toLowerCase() === addData.search_value.trim().toLowerCase();
-        }) || null;
-    }, [addData.search_value, addData.search_type, materiels]);
+        });
+        if (!found) return null;
+        return { ...found, unavailable: hasOverlap(found.id, addData.date_affectation, null) };
+    }, [addData.search_value, addData.search_type, addData.date_affectation, materiels, affectations]);
 
     const submitAdd = (e) => {
         e.preventDefault();
@@ -299,12 +313,17 @@ export default function Index({ affectations, employes, materiels }) {
                                             ? 'Aucun employé avec ce matricule'
                                             : 'En attente de matricule...'}
                                 </div>
-                                <div className={`px-3 py-2 rounded border ${matchedMateriel ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
-                                    {matchedMateriel
-                                        ? `Matériel trouvé : ${matchedMateriel.nom} - ${matchedMateriel.marque} ${matchedMateriel.modele}`
-                                        : addData.search_value
-                                            ? 'Aucun matériel disponible ne correspond'
-                                            : 'En attente de numéro...'}
+                                <div className={`px-3 py-2 rounded border ${matchedMateriel && !matchedMateriel.unavailable ? 'bg-green-50 border-green-200'
+                                        : matchedMateriel?.unavailable ? 'bg-red-50 border-red-200'
+                                            : 'bg-gray-50 border-gray-200'
+                                    }`}>
+                                    {matchedMateriel?.unavailable
+                                        ? `Ce matériel est déjà affecté sur cette période (${matchedMateriel.nom})`
+                                        : matchedMateriel
+                                            ? `Matériel trouvé : ${matchedMateriel.nom} - ${matchedMateriel.marque} ${matchedMateriel.modele}`
+                                            : addData.search_value
+                                                ? 'Aucun matériel avec ce numéro'
+                                                : 'En attente de numéro...'}
                                 </div>
                             </div>
 
@@ -451,7 +470,7 @@ export default function Index({ affectations, employes, materiels }) {
                             </div>
                             <div className={`px-3 py-2 rounded border ${editMatchedMateriel ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
                                 {editMatchedMateriel ? `Matériel : ${editMatchedMateriel.nom} - ${editMatchedMateriel.marque} ${editMatchedMateriel.modele}` : 'Aucun matériel correspondant'}
-                            </div>
+                            </div>  
                         </div>
 
                         {pageErrors?.materiel_id && (
