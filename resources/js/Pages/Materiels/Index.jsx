@@ -112,98 +112,117 @@ export default function Index({ materiels, categories }) {
                                     </tr>
                                 </thead>
                                 <tbody className="text-sm">
-                                    {materiels.map((m) => (
-                                        <tr key={m.id} className="border-b hover:bg-gray-50">
-                                            {editingId === m.id ? (
-                                                <td colSpan={8} className="py-2 px-3">
-                                                    <form
-                                                        onSubmit={(e) => saveEdit(e, m.id)}
-                                                        className="grid grid-cols-2 md:grid-cols-3 gap-2"
-                                                    >
-                                                        <input
-                                                            value={editForm.data.nom}
-                                                            onChange={(e) => editForm.setData('nom', e.target.value)}
-                                                            placeholder="Nom"
-                                                            className="border rounded px-2 py-1"
-                                                            autoFocus
-                                                        />
-                                                        <input
-                                                            value={editForm.data.marque}
-                                                            onChange={(e) => editForm.setData('marque', e.target.value)}
-                                                            placeholder="Marque"
-                                                            className="border rounded px-2 py-1"
-                                                        />
-                                                        <input
-                                                            value={editForm.data.modele}
-                                                            onChange={(e) => editForm.setData('modele', e.target.value)}
-                                                            placeholder="Modèle"
-                                                            className="border rounded px-2 py-1"
-                                                        />
-                                                        <input
-                                                            value={editForm.data.numero_serie}
-                                                            onChange={(e) => editForm.setData('numero_serie', e.target.value)}
-                                                            placeholder="N° Série"
-                                                            className="border rounded px-2 py-1"
-                                                        />
-                                                        <input
-                                                            value={editForm.data.numero_inventaire}
-                                                            onChange={(e) => editForm.setData('numero_inventaire', e.target.value)}
-                                                            placeholder="N° Inventaire"
-                                                            className="border rounded px-2 py-1"
-                                                        />
-                                                        <select
-                                                            value={editForm.data.categorie_id}
-                                                            onChange={(e) => editForm.setData('categorie_id', e.target.value)}
-                                                            className="border rounded px-2 py-1"
+                                    {materiels.map((m) => {
+                                        if (editingId === m.id) {
+                                            return (
+                                                <tr key={m.id} className="border-b hover:bg-gray-50">
+                                                    <td colSpan="8" className="py-2 px-3">
+                                                        <form
+                                                            onSubmit={(e) => saveEdit(e, m.id)}
+                                                            className="grid grid-cols-8 gap-2 items-center"
                                                         >
-                                                            {categories.map((cat) => (
-                                                                <option key={cat.id} value={cat.id}>{cat.nom_categorie}</option>
-                                                            ))}
-                                                        </select>
-                                                        <textarea
-                                                            value={editForm.data.caracteristique}
-                                                            onChange={(e) => editForm.setData('caracteristique', e.target.value)}
-                                                            placeholder="Caractéristiques"
-                                                            className="border rounded px-2 py-1 col-span-2 md:col-span-3"
-                                                        />
-                                                        {Object.keys(editForm.errors).length > 0 && (
-                                                            <div className="col-span-2 md:col-span-3 text-red-600 text-sm">
-                                                                {Object.values(editForm.errors).map((err, i) => <p key={i}>{err}</p>)}
+                                                            <div className="col-span-1">
+                                                                <input
+                                                                    value={editForm.data.nom}
+                                                                    onChange={(e) => editForm.setData('nom', e.target.value)}
+                                                                    placeholder="Nom"
+                                                                    className="border rounded px-2 py-1 w-full"
+                                                                    autoFocus
+                                                                />
                                                             </div>
-                                                        )}
-                                                        <div className="col-span-2 md:col-span-3 flex gap-3">
-                                                            <button type="submit" className="text-green-700 text-sm font-medium">
-                                                                Enregistrer
-                                                            </button>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => setEditingId(null)}
-                                                                className="text-gray-500 text-sm"
-                                                            >
-                                                                Annuler
-                                                            </button>
-                                                        </div>
-                                                    </form>
-                                                </td>
-                                            ) : (
-                                                <>
-                                                    <td className="py-2 px-3">{m.nom}</td>
-                                                    <td className="py-2 px-3">{m.marque}</td>
-                                                    <td className="py-2 px-3">{m.modele}</td>
-                                                    <td className="py-2 px-3">{m.numero_serie}</td>
-                                                    <td className="py-2 px-3">{m.numero_inventaire}</td>
-                                                    <td className="py-2 px-3">{m.categorie?.nom_categorie}</td>
-                                                    <td className="py-2 px-3">{m.affectations_count}</td>
-                                                    <td className="py-2 px-3">
-                                                        <div className="flex gap-3">
-                                                            <button onClick={() => startEdit(m)} className="text-indigo-600 text-sm">Modifier</button>
-                                                            <button onClick={() => destroy(m.id)} className="text-red-600 text-sm">Supprimer</button>
-                                                        </div>
+                                                            <div className="col-span-1">
+                                                                <input
+                                                                    value={editForm.data.marque}
+                                                                    onChange={(e) => editForm.setData('marque', e.target.value)}
+                                                                    placeholder="Marque"
+                                                                    className="border rounded px-2 py-1 w-full"
+                                                                />
+                                                            </div>
+                                                            <div className="col-span-1">
+                                                                <input
+                                                                    value={editForm.data.modele}
+                                                                    onChange={(e) => editForm.setData('modele', e.target.value)}
+                                                                    placeholder="Modèle"
+                                                                    className="border rounded px-2 py-1 w-full"
+                                                                />
+                                                            </div>
+                                                            <div className="col-span-1">
+                                                                <input
+                                                                    value={editForm.data.numero_serie}
+                                                                    onChange={(e) => editForm.setData('numero_serie', e.target.value)}
+                                                                    placeholder="N° Série"
+                                                                    className="border rounded px-2 py-1 w-full"
+                                                                />
+                                                            </div>
+                                                            <div className="col-span-1">
+                                                                <input
+                                                                    value={editForm.data.numero_inventaire}
+                                                                    onChange={(e) => editForm.setData('numero_inventaire', e.target.value)}
+                                                                    placeholder="N° Inventaire"
+                                                                    className="border rounded px-2 py-1 w-full"
+                                                                />
+                                                            </div>
+                                                            <div className="col-span-1">
+                                                                <select
+                                                                    value={editForm.data.categorie_id}
+                                                                    onChange={(e) => editForm.setData('categorie_id', e.target.value)}
+                                                                    className="border rounded px-2 py-1 w-full"
+                                                                >
+                                                                    <option value="">Catégorie...</option>
+                                                                    {categories.map((cat) => (
+                                                                        <option key={cat.id} value={cat.id}>{cat.nom_categorie}</option>
+                                                                    ))}
+                                                                </select>
+                                                            </div>
+                                                            <div className="col-span-1 text-center text-gray-400">
+                                                                {m.affectations_count || 0}
+                                                            </div>
+                                                            <div className="col-span-1">
+                                                                <div className="flex gap-2 items-center">
+                                                                    <button type="submit" className="text-green-700 text-sm font-medium">
+                                                                        💾
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            setEditingId(null);
+                                                                            editForm.clearErrors();
+                                                                        }}
+                                                                        className="text-gray-500 text-sm"
+                                                                    >
+                                                                        ✕
+                                                                    </button>
+                                                                </div>
+                                                                {Object.keys(editForm.errors).length > 0 && (
+                                                                    <div className="text-red-600 text-xs mt-1">
+                                                                        {Object.values(editForm.errors).map((err, i) => <p key={i}>{err}</p>)}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </form>
                                                     </td>
-                                                </>
-                                            )}
-                                        </tr>
-                                    ))}
+                                                </tr>
+                                            );
+                                        }
+                                        
+                                        return (
+                                            <tr key={m.id} className="border-b hover:bg-gray-50">
+                                                <td className="py-2 px-3">{m.nom}</td>
+                                                <td className="py-2 px-3">{m.marque}</td>
+                                                <td className="py-2 px-3">{m.modele}</td>
+                                                <td className="py-2 px-3">{m.numero_serie}</td>
+                                                <td className="py-2 px-3">{m.numero_inventaire}</td>
+                                                <td className="py-2 px-3">{m.categorie?.nom_categorie}</td>
+                                                <td className="py-2 px-3 text-center">{m.affectations_count}</td>
+                                                <td className="py-2 px-3">
+                                                    <div className="flex gap-3">
+                                                        <button onClick={() => startEdit(m)} className="text-indigo-600 text-sm">Modifier</button>
+                                                        <button onClick={() => destroy(m.id)} className="text-red-600 text-sm">Supprimer</button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>

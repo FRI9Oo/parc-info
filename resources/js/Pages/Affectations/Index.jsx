@@ -6,7 +6,7 @@ import { useMemo, useState } from 'react';
 export default function Index({ affectations, employes, materiels }) {
     const { errors: pageErrors } = usePage().props;
     const today = new Date().toISOString().slice(0, 10);
-    // Add near the top of the component, after `today` is defined
+
     const hasOverlap = (materielId, start, end, excludeId = null) => {
         const newStart = start;
         const newEnd = end || '9999-12-31';
@@ -71,7 +71,7 @@ export default function Index({ affectations, employes, materiels }) {
 
     const submitAdd = (e) => {
         e.preventDefault();
-        if (!matchedEmploye || !matchedMateriel) return;
+        if (!matchedEmploye || !matchedMateriel || matchedMateriel.unavailable) return;
 
         setIsSubmitting(true);
         router.post(
@@ -125,14 +125,19 @@ export default function Index({ affectations, employes, materiels }) {
 
     const editMatchedMateriel = useMemo(() => {
         if (!editState || !editState.search_value.trim()) return null;
-        return editMateriels.find((m) => {
+        const found = editMateriels.find((m) => {
             const val = editState.search_type === 'serie' ? m.numero_serie : m.numero_inventaire;
             return val && val.toLowerCase() === editState.search_value.trim().toLowerCase();
-        }) || null;
-    }, [editState, editMateriels]);
+        });
+        if (!found) return null;
+        return {
+            ...found,
+            unavailable: hasOverlap(found.id, editState.date_affectation, null, editState.id),
+        };
+    }, [editState, editMateriels, affectations]);
 
     const submitEdit = () => {
-        if (!editState || !editMatchedEmploye || !editMatchedMateriel) return;
+        if (!editState || !editMatchedEmploye || !editMatchedMateriel || editMatchedMateriel.unavailable) return;
         router.put(
             route('affectations.update', editState.id),
             {
@@ -329,7 +334,7 @@ export default function Index({ affectations, employes, materiels }) {
 
                             <button
                                 type="submit"
-                                disabled={isSubmitting || !matchedEmploye || !matchedMateriel}
+                                disabled={isSubmitting || !matchedEmploye || !matchedMateriel || matchedMateriel.unavailable}
                                 className="bg-gray-800 text-white px-4 py-2 rounded md:col-span-4 hover:bg-gray-700 transition disabled:opacity-50"
                             >
                                 {isSubmitting ? 'Affectation en cours...' : 'Affecter'}
@@ -468,9 +473,16 @@ export default function Index({ affectations, employes, materiels }) {
                             <div className={`px-3 py-2 rounded border ${editMatchedEmploye ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
                                 {editMatchedEmploye ? `Employé : ${editMatchedEmploye.nom} ${editMatchedEmploye.prenom}` : 'Aucun employé avec ce matricule'}
                             </div>
-                            <div className={`px-3 py-2 rounded border ${editMatchedMateriel ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
-                                {editMatchedMateriel ? `Matériel : ${editMatchedMateriel.nom} - ${editMatchedMateriel.marque} ${editMatchedMateriel.modele}` : 'Aucun matériel correspondant'}
-                            </div>  
+                            <div className={`px-3 py-2 rounded border ${editMatchedMateriel && !editMatchedMateriel.unavailable ? 'bg-green-50 border-green-200'
+                                    : editMatchedMateriel?.unavailable ? 'bg-red-50 border-red-200'
+                                        : 'bg-gray-50 border-gray-200'
+                                }`}>
+                                {editMatchedMateriel?.unavailable
+                                    ? `Ce matériel est déjà affecté sur cette période (${editMatchedMateriel.nom})`
+                                    : editMatchedMateriel
+                                        ? `Matériel : ${editMatchedMateriel.nom} - ${editMatchedMateriel.marque} ${editMatchedMateriel.modele}`
+                                        : 'Aucun matériel correspondant'}
+                            </div>
                         </div>
 
                         {pageErrors?.materiel_id && (
@@ -481,7 +493,7 @@ export default function Index({ affectations, employes, materiels }) {
                             <button onClick={() => setEditState(null)} className="text-gray-500 text-sm">Annuler</button>
                             <button
                                 onClick={submitEdit}
-                                disabled={!editMatchedEmploye || !editMatchedMateriel}
+                                disabled={!editMatchedEmploye || !editMatchedMateriel || editMatchedMateriel.unavailable}
                                 className="bg-gray-800 text-white px-4 py-2 rounded text-sm disabled:opacity-50"
                             >
                                 Enregistrer
