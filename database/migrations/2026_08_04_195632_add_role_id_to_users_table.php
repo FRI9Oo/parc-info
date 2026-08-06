@@ -11,12 +11,14 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->foreignId('role_id')->nullable()->after('id')->constrained('roles')->nullOnDelete();
+            $table->foreignId('employe_id')->nullable()->after('role_id')->constrained('employes')->nullOnDelete();
         });
     }
 
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
+            $table->dropConstrainedForeignId('employe_id');
             $table->dropConstrainedForeignId('role_id');
         });
     }

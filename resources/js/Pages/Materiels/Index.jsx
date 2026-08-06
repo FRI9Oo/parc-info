@@ -178,9 +178,9 @@ export default function Index({ materiels, categories }) {
                                                                 {m.affectations_count || 0}
                                                             </div>
                                                             <div className="col-span-1">
-                                                                <div className="flex gap-2 items-center">
+                                                                <div className="flex flex-col gap-1">
                                                                     <button type="submit" className="text-green-700 text-sm font-medium">
-                                                                        💾
+                                                                        Enregistrer
                                                                     </button>
                                                                     <button
                                                                         type="button"
@@ -190,7 +190,7 @@ export default function Index({ materiels, categories }) {
                                                                         }}
                                                                         className="text-gray-500 text-sm"
                                                                     >
-                                                                        ✕
+                                                                        Annuler
                                                                     </button>
                                                                 </div>
                                                                 {Object.keys(editForm.errors).length > 0 && (

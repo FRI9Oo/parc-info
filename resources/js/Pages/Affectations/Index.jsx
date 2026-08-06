@@ -325,7 +325,7 @@ export default function Index({ affectations, employes, materiels }) {
                                     {matchedMateriel?.unavailable
                                         ? `Ce matériel est déjà affecté sur cette période (${matchedMateriel.nom})`
                                         : matchedMateriel
-                                            ? `Matériel trouvé : ${matchedMateriel.nom} - ${matchedMateriel.marque} ${matchedMateriel.modele}`
+                                            ? `Matériel trouvé : ${matchedMateriel.nom} — ${matchedMateriel.marque} ${matchedMateriel.modele} [Catégorie : ${matchedMateriel.categorie?.nom_categorie ?? 'N/A'}]`
                                             : addData.search_value
                                                 ? 'Aucun matériel avec ce numéro'
                                                 : 'En attente de numéro...'}
