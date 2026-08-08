@@ -50,6 +50,14 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        $user = Auth::user();
+        if ($user && ! $user->is_active) {
+            Auth::logout();
+            throw ValidationException::withMessages([
+                'email' => 'Votre compte a été désactivé par l\'administrateur.',
+            ]);
+        }
+
         RateLimiter::clear($this->throttleKey());
     }
 

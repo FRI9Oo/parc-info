@@ -13,7 +13,7 @@ class CheckPermission
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
-    public function handle(Request $request, Closure $next, string $permission): Response
+    public function handle(Request $request, Closure $next, string ...$permissions): Response
     {
         $user = $request->user();
 
@@ -26,11 +26,24 @@ class CheckPermission
             return $next($request);
         }
 
-        // Check if user's assigned role possesses the requested permission
-        if ($user->hasPermission($permission)) {
-            return $next($request);
+        // Expand comma-separated permission strings if passed as 'voir_X,gerer_X'
+        $allPermissions = [];
+        foreach ($permissions as $p) {
+            foreach (explode(',', $p) as $subP) {
+                $trimmed = trim($subP);
+                if ($trimmed !== '') {
+                    $allPermissions[] = $trimmed;
+                }
+            }
         }
 
-        abort(403, "Accès non autorisé : la permission '{$permission}' est requise.");
+        foreach ($allPermissions as $perm) {
+            if ($user->hasPermission($perm)) {
+                return $next($request);
+            }
+        }
+
+        $permsList = implode(', ', $allPermissions);
+        abort(403, "Accès non autorisé : l'une des permissions [{$permsList}] est requise.");
     }
 }

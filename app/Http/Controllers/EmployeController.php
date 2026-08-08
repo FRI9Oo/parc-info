@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AuditLog;
 use App\Models\Employe;
 use App\Models\Service;
 use Illuminate\Http\Request;
@@ -29,7 +30,9 @@ class EmployeController extends Controller
             'service_id' => 'required|exists:services,id',
         ]);
 
-        Employe::create($validated);
+        $e = Employe::create($validated);
+
+        AuditLog::record('Création', 'Employés', "Ajout de l'employé '{$e->nom} {$e->prenom}' (Matricule: {$e->matricule})", $e);
 
         return redirect()->back();
     }
@@ -46,6 +49,8 @@ class EmployeController extends Controller
 
         $employe->update($validated);
 
+        AuditLog::record('Modification', 'Employés', "Modification de la fiche employé '{$employe->nom} {$employe->prenom}' (Matricule: {$employe->matricule})", $employe);
+
         return redirect()->back();
     }
 
@@ -57,7 +62,10 @@ class EmployeController extends Controller
             ]);
         }
 
+        $desc = "Suppression de l'employé '{$employe->nom} {$employe->prenom}' (Matricule: {$employe->matricule})";
         $employe->delete();
+
+        AuditLog::record('Suppression', 'Employés', $desc);
 
         return redirect()->back();
     }

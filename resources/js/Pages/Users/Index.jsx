@@ -10,14 +10,21 @@ export default function Index({ users, roles, employes }) {
     // ---------- Search & Filter State ----------
     const [searchQuery, setSearchQuery] = useState('');
     const [roleFilter, setRoleFilter] = useState('all');
+    const [statusFilter, setStatusFilter] = useState('all'); // 'all', 'active', 'inactive'
 
     const filteredUsers = useMemo(() => {
         return users.filter((u) => {
+            // Status filter
+            if (statusFilter === 'active' && !u.is_active) return false;
+            if (statusFilter === 'inactive' && u.is_active) return false;
+
+            // Role filter
             if (roleFilter !== 'all') {
                 if (roleFilter === 'none' && u.role_id) return false;
                 if (roleFilter !== 'none' && String(u.role_id) !== String(roleFilter)) return false;
             }
 
+            // Search query
             if (searchQuery.trim()) {
                 const q = searchQuery.toLowerCase().trim();
                 const matchName = u.name?.toLowerCase().includes(q);
@@ -32,7 +39,7 @@ export default function Index({ users, roles, employes }) {
 
             return true;
         });
-    }, [users, searchQuery, roleFilter]);
+    }, [users, searchQuery, roleFilter, statusFilter]);
 
     // ---------- Form Add User ----------
     const [addData, setAddData] = useState({
@@ -80,6 +87,37 @@ export default function Index({ users, roles, employes }) {
         });
     };
 
+    // ---------- Reset Password Modal ----------
+    const [resetState, setResetState] = useState(null);
+    const [newPassword, setNewPassword] = useState('');
+
+    const openReset = (u) => {
+        setResetState(u);
+        setNewPassword('');
+    };
+
+    const submitReset = (e) => {
+        e.preventDefault();
+        if (!resetState) return;
+
+        router.put(route('users.reset-password', resetState.id), { password: newPassword }, {
+            onSuccess: () => setResetState(null),
+        });
+    };
+
+    // ---------- Toggle Status ----------
+    const toggleStatus = (u) => {
+        if (u.id === currentUser.id) {
+            alert('Vous ne pouvez pas désactiver votre propre compte.');
+            return;
+        }
+
+        const actionText = u.is_active ? 'désactiver' : 'activer';
+        if (confirm(`Voulez-vous ${actionText} le compte de ${u.name} ?`)) {
+            router.put(route('users.toggle-status', u.id));
+        }
+    };
+
     // ---------- Delete User ----------
     const destroyUser = (u) => {
         if (u.id === currentUser.id) {
@@ -87,7 +125,7 @@ export default function Index({ users, roles, employes }) {
             return;
         }
 
-        if (confirm(`Supprimer l'utilisateur ${u.name} ?`)) {
+        if (confirm(`Supprimer définitivement l'utilisateur ${u.name} ?`)) {
             router.delete(route('users.destroy', u.id));
         }
     };
@@ -111,57 +149,62 @@ export default function Index({ users, roles, employes }) {
                             {pageErrors.delete}
                         </div>
                     )}
+                    {pageErrors?.status && (
+                        <div className="bg-red-50 text-red-700 text-sm p-3 rounded shadow-sm">
+                            {pageErrors.status}
+                        </div>
+                    )}
 
                     {/* Card: Ajouter un utilisateur */}
                     <div className="bg-white shadow-sm sm:rounded-lg p-6">
-                        <h1 className="text-xl font-semibold mb-4 text-gray-800">Ajouter un utilisateur</h1>
+                        <h1 className="text-xl font-semibold mb-4 text-slate-800">Ajouter un utilisateur</h1>
 
-                        <form onSubmit={submitAdd} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <form onSubmit={submitAdd} className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">Nom complet *</label>
+                                <label className="block text-xs font-semibold text-slate-700 mb-1">Nom complet *</label>
                                 <input
                                     type="text"
-                                    placeholder="ex: Ahmed Benali"
+                                    placeholder="ex: Youssef El Alami"
                                     value={addData.name}
                                     onChange={(e) => setAddData({ ...addData, name: e.target.value })}
-                                    className="border rounded px-3 py-2 text-sm w-full focus:ring-1 focus:ring-gray-800"
+                                    className="border rounded-lg px-3 py-2 text-sm w-full focus:ring-1 focus:ring-[#11508f]"
                                     required
                                 />
                                 {pageErrors?.name && <span className="text-red-600 text-xs">{pageErrors.name}</span>}
                             </div>
 
                             <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">Adresse Email *</label>
+                                <label className="block text-xs font-semibold text-slate-700 mb-1">Adresse Email *</label>
                                 <input
                                     type="email"
-                                    placeholder="ex: ahmed@example.com"
+                                    placeholder="ex: y.elalami@example.com"
                                     value={addData.email}
                                     onChange={(e) => setAddData({ ...addData, email: e.target.value })}
-                                    className="border rounded px-3 py-2 text-sm w-full focus:ring-1 focus:ring-gray-800"
+                                    className="border rounded-lg px-3 py-2 text-sm w-full focus:ring-1 focus:ring-[#11508f]"
                                     required
                                 />
                                 {pageErrors?.email && <span className="text-red-600 text-xs">{pageErrors.email}</span>}
                             </div>
 
                             <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">Mot de passe *</label>
+                                <label className="block text-xs font-semibold text-slate-700 mb-1">Mot de passe *</label>
                                 <input
                                     type="password"
                                     placeholder="••••••••"
                                     value={addData.password}
                                     onChange={(e) => setAddData({ ...addData, password: e.target.value })}
-                                    className="border rounded px-3 py-2 text-sm w-full focus:ring-1 focus:ring-gray-800"
+                                    className="border rounded-lg px-3 py-2 text-sm w-full focus:ring-1 focus:ring-[#11508f]"
                                     required
                                 />
                                 {pageErrors?.password && <span className="text-red-600 text-xs">{pageErrors.password}</span>}
                             </div>
 
                             <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">Rôle Système</label>
+                                <label className="block text-xs font-semibold text-slate-700 mb-1">Rôle Système</label>
                                 <select
                                     value={addData.role_id}
                                     onChange={(e) => setAddData({ ...addData, role_id: e.target.value })}
-                                    className="border rounded px-3 py-2 text-sm w-full"
+                                    className="border rounded-lg px-3 py-2 text-sm w-full bg-white focus:ring-1 focus:ring-[#11508f]"
                                 >
                                     <option value="">-- Aucun rôle --</option>
                                     {roles.map((r) => (
@@ -171,11 +214,11 @@ export default function Index({ users, roles, employes }) {
                             </div>
 
                             <div className="md:col-span-2">
-                                <label className="block text-xs font-medium text-gray-700 mb-1">Employé Associé (Optionnel)</label>
+                                <label className="block text-xs font-semibold text-slate-700 mb-1">Employé Associé (Optionnel)</label>
                                 <select
                                     value={addData.employe_id}
                                     onChange={(e) => setAddData({ ...addData, employe_id: e.target.value })}
-                                    className="border rounded px-3 py-2 text-sm w-full"
+                                    className="border rounded-lg px-3 py-2 text-sm w-full bg-white focus:ring-1 focus:ring-[#11508f]"
                                 >
                                     <option value="">-- Aucun employé associé --</option>
                                     {employes.map((e) => (
@@ -186,11 +229,11 @@ export default function Index({ users, roles, employes }) {
                                 </select>
                             </div>
 
-                            <div className="md:col-span-2 pt-2">
+                            <div className="md:col-span-3 flex justify-end pt-2">
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="bg-gray-800 text-white px-5 py-2 rounded text-sm hover:bg-gray-700 transition disabled:opacity-50"
+                                    className="bg-[#11508f] text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-[#0d3d6e] transition disabled:opacity-50"
                                 >
                                     {isSubmitting ? 'Création...' : 'Créer l\'utilisateur'}
                                 </button>
@@ -199,23 +242,23 @@ export default function Index({ users, roles, employes }) {
                     </div>
 
                     {/* Card: Liste des utilisateurs */}
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                    <div className="lux-card p-6">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                            <h1 className="text-xl font-semibold text-gray-800">Liste des Utilisateurs ({filteredUsers.length})</h1>
+                            <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">Gestion des Compte Utilisateurs ({filteredUsers.length})</h1>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1 md:max-w-xl">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 flex-1 md:max-w-2xl">
                                 <input
                                     type="text"
-                                    placeholder="Rechercher (Nom, Email, Rôle, Employé...)"
+                                    placeholder="Rechercher (Nom, Email, Rôle...)"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="border rounded px-3 py-1.5 text-sm w-full"
+                                    className="border border-slate-200 rounded-xl px-3.5 py-2 text-sm w-full focus:ring-1 focus:ring-[#11508f] bg-slate-50/50"
                                 />
 
                                 <select
                                     value={roleFilter}
                                     onChange={(e) => setRoleFilter(e.target.value)}
-                                    className="border rounded px-3 py-1.5 text-sm w-full bg-white"
+                                    className="border border-slate-200 rounded-xl px-3.5 py-2 text-sm w-full bg-white focus:ring-1 focus:ring-[#11508f]"
                                 >
                                     <option value="all">Tous les rôles</option>
                                     <option value="none">Sans rôle assigné</option>
@@ -223,44 +266,66 @@ export default function Index({ users, roles, employes }) {
                                         <option key={r.id} value={r.id}>{r.nom_role}</option>
                                     ))}
                                 </select>
+
+                                <select
+                                    value={statusFilter}
+                                    onChange={(e) => setStatusFilter(e.target.value)}
+                                    className="border rounded-lg px-3 py-1.5 text-sm w-full bg-white"
+                                >
+                                    <option value="all">Tous les statuts</option>
+                                    <option value="active">Actifs seulement</option>
+                                    <option value="inactive">Désactivés seulement</option>
+                                </select>
                             </div>
                         </div>
 
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead>
-                                    <tr className="border-b bg-gray-50 text-sm">
-                                        <th className="py-2 px-3 whitespace-nowrap">Nom</th>
-                                        <th className="py-2 px-3 whitespace-nowrap">Email</th>
-                                        <th className="py-2 px-3 whitespace-nowrap">Employé Fiche</th>
-                                        <th className="py-2 px-3 whitespace-nowrap">Rôle</th>
-                                        <th className="py-2 px-3 whitespace-nowrap">Actions</th>
+                                    <tr className="border-b bg-slate-50 text-xs text-slate-600 font-semibold uppercase tracking-wider">
+                                        <th className="py-3 px-3">Nom</th>
+                                        <th className="py-3 px-3">Email</th>
+                                        <th className="py-3 px-3">Statut</th>
+                                        <th className="py-3 px-3">Employé Fiche</th>
+                                        <th className="py-3 px-3">Rôle Assigné</th>
+                                        <th className="py-3 px-3 text-right">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody className="text-sm">
+                                <tbody className="text-sm divide-y divide-slate-100">
                                     {filteredUsers.map((u) => (
-                                        <tr key={u.id} className="border-b hover:bg-gray-50 transition">
-                                            <td className="py-2 px-3 font-medium text-gray-900 whitespace-nowrap">
+                                        <tr key={u.id} className="hover:bg-slate-50 transition">
+                                            <td className="py-3 px-3 font-medium text-slate-900 whitespace-nowrap">
                                                 {u.name}
                                                 {u.id === currentUser.id && (
-                                                    <span className="ms-2 text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded">Vous</span>
+                                                    <span className="ms-2 text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded border border-indigo-200">Vous</span>
                                                 )}
                                             </td>
-                                            <td className="py-2 px-3 whitespace-nowrap">{u.email}</td>
-                                            <td className="py-2 px-3 whitespace-nowrap">
+                                            <td className="py-3 px-3 whitespace-nowrap text-slate-600">{u.email}</td>
+                                            <td className="py-3 px-3 whitespace-nowrap">
+                                                {u.is_active ? (
+                                                    <span className="inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200">
+                                                        Actif
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">
+                                                        Désactivé
+                                                    </span>
+                                                )}
+                                            </td>
+                                            <td className="py-3 px-3 whitespace-nowrap">
                                                 {u.employe ? (
-                                                    <span className="text-gray-700">
+                                                    <span className="text-slate-700">
                                                         {u.employe.nom} {u.employe.prenom} ({u.employe.matricule})
                                                     </span>
                                                 ) : (
-                                                    <span className="text-gray-400 italic">—</span>
+                                                    <span className="text-slate-400 italic">—</span>
                                                 )}
                                             </td>
-                                            <td className="py-2 px-3 whitespace-nowrap">
+                                            <td className="py-3 px-3 whitespace-nowrap">
                                                 <select
                                                     value={u.role_id || ''}
                                                     onChange={(e) => changeRole(u.id, e.target.value)}
-                                                    className="border rounded px-2 py-1 text-xs bg-white"
+                                                    className="border rounded-lg px-2 py-1 text-xs bg-white focus:ring-1 focus:ring-[#11508f]"
                                                 >
                                                     <option value="">-- Aucun rôle --</option>
                                                     {roles.map((r) => (
@@ -268,22 +333,42 @@ export default function Index({ users, roles, employes }) {
                                                     ))}
                                                 </select>
                                             </td>
-                                            <td className="py-2 px-3 whitespace-nowrap">
-                                                <div className="flex items-center gap-3">
+                                            <td className="py-3 px-3 text-right whitespace-nowrap">
+                                                <div className="flex items-center justify-end gap-1.5">
                                                     <button
                                                         onClick={() => openEdit(u)}
-                                                        className="text-blue-600 font-medium text-xs hover:underline"
+                                                        title="Modifier le compte"
+                                                        className="p-1.5 rounded-lg text-blue-600 hover:text-blue-800 hover:bg-blue-50 transition"
                                                     >
-                                                        Éditer
+                                                        ✏️
+                                                    </button>
+
+                                                    <button
+                                                        onClick={() => openReset(u)}
+                                                        title="Réinitialiser le mot de passe"
+                                                        className="p-1.5 rounded-lg text-purple-600 hover:text-purple-800 hover:bg-purple-50 transition"
+                                                    >
+                                                        🔑
                                                     </button>
 
                                                     {u.id !== currentUser.id && (
-                                                        <button
-                                                            onClick={() => destroyUser(u)}
-                                                            className="text-red-600 font-medium text-xs hover:underline"
-                                                        >
-                                                            Supprimer
-                                                        </button>
+                                                        <>
+                                                            <button
+                                                                onClick={() => toggleStatus(u)}
+                                                                title={u.is_active ? 'Désactiver le compte' : 'Activer le compte'}
+                                                                className={`p-1.5 rounded-lg transition ${u.is_active ? 'text-amber-600 hover:bg-amber-50' : 'text-emerald-600 hover:bg-emerald-50'}`}
+                                                            >
+                                                                {u.is_active ? '🚫' : '✅'}
+                                                            </button>
+
+                                                            <button
+                                                                onClick={() => destroyUser(u)}
+                                                                title="Supprimer l'utilisateur"
+                                                                className="p-1.5 rounded-lg text-red-600 hover:text-red-800 hover:bg-red-50 transition"
+                                                            >
+                                                                🗑️
+                                                            </button>
+                                                        </>
                                                     )}
                                                 </div>
                                             </td>
@@ -300,49 +385,36 @@ export default function Index({ users, roles, employes }) {
             <Modal show={!!editState} onClose={() => setEditState(null)} maxWidth="md">
                 {editState && (
                     <form onSubmit={submitEdit} className="p-6 space-y-4">
-                        <h2 className="text-lg font-medium text-gray-900">Éditer l'utilisateur</h2>
+                        <h2 className="text-lg font-bold text-slate-800 border-b pb-2">Éditer l'utilisateur</h2>
 
                         <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">Nom complet *</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">Nom complet *</label>
                             <input
                                 type="text"
                                 value={editState.name}
                                 onChange={(e) => setEditState({ ...editState, name: e.target.value })}
-                                className="border rounded px-3 py-2 text-sm w-full"
+                                className="border rounded-lg px-3 py-2 text-sm w-full focus:ring-1 focus:ring-[#11508f]"
                                 required
                             />
                         </div>
 
                         <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">Adresse Email *</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">Adresse Email *</label>
                             <input
                                 type="email"
                                 value={editState.email}
                                 onChange={(e) => setEditState({ ...editState, email: e.target.value })}
-                                className="border rounded px-3 py-2 text-sm w-full"
+                                className="border rounded-lg px-3 py-2 text-sm w-full focus:ring-1 focus:ring-[#11508f]"
                                 required
                             />
                         </div>
 
                         <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">
-                                Nouveau mot de passe <span className="text-gray-400 font-normal">(Laisser vide pour ne pas modifier)</span>
-                            </label>
-                            <input
-                                type="password"
-                                placeholder="••••••••"
-                                value={editState.password}
-                                onChange={(e) => setEditState({ ...editState, password: e.target.value })}
-                                className="border rounded px-3 py-2 text-sm w-full"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">Rôle Système</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">Rôle Système</label>
                             <select
                                 value={editState.role_id}
                                 onChange={(e) => setEditState({ ...editState, role_id: e.target.value })}
-                                className="border rounded px-3 py-2 text-sm w-full"
+                                className="border rounded-lg px-3 py-2 text-sm w-full bg-white focus:ring-1 focus:ring-[#11508f]"
                             >
                                 <option value="">-- Aucun rôle --</option>
                                 {roles.map((r) => (
@@ -352,11 +424,11 @@ export default function Index({ users, roles, employes }) {
                         </div>
 
                         <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">Employé Associé</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">Employé Associé</label>
                             <select
                                 value={editState.employe_id}
                                 onChange={(e) => setEditState({ ...editState, employe_id: e.target.value })}
-                                className="border rounded px-3 py-2 text-sm w-full"
+                                className="border rounded-lg px-3 py-2 text-sm w-full bg-white focus:ring-1 focus:ring-[#11508f]"
                             >
                                 <option value="">-- Aucun employé associé --</option>
                                 {employes.map((e) => (
@@ -367,19 +439,58 @@ export default function Index({ users, roles, employes }) {
                             </select>
                         </div>
 
-                        <div className="flex justify-end gap-3 pt-2">
+                        <div className="flex justify-end gap-3 pt-4 border-t">
                             <button
                                 type="button"
                                 onClick={() => setEditState(null)}
-                                className="text-gray-500 text-sm"
+                                className="text-slate-600 text-sm font-medium px-4 py-2 hover:text-slate-900"
                             >
                                 Annuler
                             </button>
                             <button
                                 type="submit"
-                                className="bg-gray-800 text-white px-4 py-2 rounded text-sm hover:bg-gray-700"
+                                className="bg-[#11508f] text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-[#0d3d6e] transition"
                             >
                                 Enregistrer
+                            </button>
+                        </div>
+                    </form>
+                )}
+            </Modal>
+
+            {/* Modal Réinitialiser Mot de passe */}
+            <Modal show={!!resetState} onClose={() => setResetState(null)} maxWidth="md">
+                {resetState && (
+                    <form onSubmit={submitReset} className="p-6 space-y-4">
+                        <h2 className="text-lg font-bold text-slate-800 border-b pb-2">
+                            Réinitialiser le mot de passe : {resetState.name}
+                        </h2>
+
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">Nouveau mot de passe *</label>
+                            <input
+                                type="password"
+                                placeholder="••••••••"
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                className="border rounded-lg px-3 py-2 text-sm w-full focus:ring-1 focus:ring-[#11508f]"
+                                required
+                            />
+                        </div>
+
+                        <div className="flex justify-end gap-3 pt-4 border-t">
+                            <button
+                                type="button"
+                                onClick={() => setResetState(null)}
+                                className="text-slate-600 text-sm font-medium px-4 py-2 hover:text-slate-900"
+                            >
+                                Annuler
+                            </button>
+                            <button
+                                type="submit"
+                                className="bg-purple-700 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-purple-800 transition"
+                            >
+                                Réinitialiser
                             </button>
                         </div>
                     </form>

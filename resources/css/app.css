@@ -1,3 +1,251 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    --brand-blue: #11508f;
+    --brand-green: #57b24a;
+    --brand-orange: #fab61e;
+    --font-heading: 'EB Garamond', serif;
+    --font-body: 'EB Garamond', serif;
+  }
+
+  body {
+    font-family: var(--font-body);
+    background-color: #f4f6fb;
+    color: #0f172a;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  html[lang="ar"] body {
+    font-family: 'Cairo', 'EB Garamond', serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.02em;
+  }
+
+  html[lang="ar"] h1,
+  html[lang="ar"] h2,
+  html[lang="ar"] h3,
+  html[lang="ar"] h4,
+  html[lang="ar"] h5,
+  html[lang="ar"] h6 {
+    font-family: 'Cairo', sans-serif;
+  }
+}
+
+/* Brand Palette Utilities */
+.bg-brand-blue { background-color: #11508f; }
+.text-brand-blue { color: #11508f; }
+.border-brand-blue { border-color: #11508f; }
+
+.bg-brand-green { background-color: #57b24a; }
+.text-brand-green { color: #57b24a; }
+.border-brand-green { border-color: #57b24a; }
+
+.bg-brand-orange { background-color: #fab61e; }
+.text-brand-orange { color: #fab61e; }
+.border-brand-orange { border-color: #fab61e; }
+
+.brand-gradient-text {
+  background: linear-gradient(135deg, #11508f 0%, #57b24a 50%, #fab61e 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.brand-tri-bar {
+  background: linear-gradient(90deg, #11508f 0%, #11508f 33.3%, #57b24a 33.3%, #57b24a 66.6%, #fab61e 66.6%, #fab61e 100%);
+}
+
+.lux-gradient-banner {
+  background: linear-gradient(135deg, #0d3d6e 0%, #11508f 60%, #1562ae 100%);
+}
+
+/* ==========================================================================
+   EXCLUSIVE ZELLIJ PATTERN BUTTONS
+   ========================================================================== */
+.btn-zellij {
+  background-image: linear-gradient(135deg, rgba(17, 80, 143, 0.90), rgba(29, 111, 194, 0.90)), url('/images/bg-pattern.jpg');
+  background-size: cover;
+  background-position: center;
+  color: #ffffff !important;
+  box-shadow: 0 10px 25px -5px rgba(17, 80, 143, 0.35);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-zellij:hover {
+  background-image: linear-gradient(135deg, rgba(17, 80, 143, 0.96), rgba(29, 111, 194, 0.96)), url('/images/bg-pattern.jpg');
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 14px 30px -5px rgba(17, 80, 143, 0.45);
+}
+
+.btn-zellij-green {
+  background-image: linear-gradient(135deg, rgba(63, 136, 53, 0.90), rgba(87, 178, 74, 0.90)), url('/images/bg-pattern.jpg');
+  background-size: cover;
+  background-position: center;
+  color: #ffffff !important;
+  box-shadow: 0 10px 25px -5px rgba(87, 178, 74, 0.35);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-zellij-green:hover {
+  background-image: linear-gradient(135deg, rgba(63, 136, 53, 0.96), rgba(87, 178, 74, 0.96)), url('/images/bg-pattern.jpg');
+  transform: translateY(-2px) scale(1.02);
+}
+
+.btn-zellij-orange {
+  background-image: linear-gradient(135deg, rgba(212, 150, 14, 0.92), rgba(250, 182, 30, 0.92)), url('/images/bg-pattern.jpg');
+  background-size: cover;
+  background-position: center;
+  color: #0b0f19 !important;
+  font-weight: 800;
+  box-shadow: 0 10px 25px -5px rgba(250, 182, 30, 0.35);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-zellij-orange:hover {
+  background-image: linear-gradient(135deg, rgba(212, 150, 14, 0.98), rgba(250, 182, 30, 0.98)), url('/images/bg-pattern.jpg');
+  transform: translateY(-2px) scale(1.02);
+}
+
+.glass-nav {
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.lux-card {
+  background: #ffffff;
+  border-radius: 1rem;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lux-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 40px -15px rgba(17, 80, 143, 0.12), 0 8px 16px -4px rgba(15, 23, 42, 0.03);
+  border-color: rgba(17, 80, 143, 0.3);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #11508f;
+}
+
+/* ==========================================================================
+   COMPREHENSIVE DARK MODE OVERRIDES
+   ========================================================================== */
+.dark body {
+  background-color: #0b0f19 !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .glass-nav {
+  background: rgba(11, 15, 25, 0.94) !important;
+  border-bottom: 1px solid rgba(30, 41, 59, 0.8) !important;
+}
+
+.dark .lux-card {
+  background: #111827 !important;
+  border-color: rgba(31, 41, 55, 0.8) !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark .lux-card:hover {
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6) !important;
+  border-color: rgba(29, 111, 194, 0.4) !important;
+}
+
+.dark .bg-white {
+  background-color: #111827 !important;
+}
+
+.dark .bg-slate-50,
+.dark .bg-gray-50 {
+  background-color: #1f2937 !important;
+}
+
+.dark .bg-slate-100,
+.dark .bg-gray-100 {
+  background-color: #374151 !important;
+}
+
+.dark .text-slate-900,
+.dark .text-slate-800,
+.dark .text-gray-900,
+.dark .text-gray-800 {
+  color: #f8fafc !important;
+}
+
+.dark .text-slate-700,
+.dark .text-slate-600,
+.dark .text-gray-700,
+.dark .text-gray-600 {
+  color: #cbd5e1 !important;
+}
+
+.dark .text-slate-500,
+.dark .text-gray-500 {
+  color: #94a3b8 !important;
+}
+
+.dark .border-slate-200,
+.dark .border-slate-100,
+.dark .border-slate-300,
+.dark .border-gray-200,
+.dark .border-gray-100 {
+  border-color: #374151 !important;
+}
+
+.dark input:not([type="checkbox"]):not([type="radio"]),
+.dark select,
+.dark textarea {
+  background-color: #1f2937 !important;
+  color: #f8fafc !important;
+  border-color: #374151 !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #64748b !important;
+}
+
+.dark tr.border-b,
+.dark td.border-b,
+.dark th.border-b {
+  border-color: #1f2937 !important;
+}
+
+.dark tr:hover {
+  background-color: #1e293b !important;
+}
+
+.dark th {
+  background-color: #1f2937 !important;
+  color: #94a3b8 !important;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #0f172a !important;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155 !important;
+}

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AuditLog;
 use App\Models\Categorie;
 use App\Models\Materiel;
 use Illuminate\Http\Request;
@@ -52,7 +53,9 @@ class MaterielController extends Controller
             'categorie_id' => 'required|exists:categories,id',
         ]);
 
-        Materiel::create($validated);
+        $m = Materiel::create($validated);
+
+        AuditLog::record('Création', 'Matériels', "Ajout du matériel '{$m->nom}' (S/N: {$m->numero_serie})", $m);
 
         return redirect()->back()->with('success', 'Matériel créé avec succès.');
     }
@@ -71,6 +74,8 @@ class MaterielController extends Controller
 
         $materiel->update($validated);
 
+        AuditLog::record('Modification', 'Matériels', "Modification du matériel '{$materiel->nom}' (S/N: {$materiel->numero_serie})", $materiel);
+
         return redirect()->back()->with('success', 'Matériel mis à jour avec succès.');
     }
 
@@ -82,7 +87,10 @@ class MaterielController extends Controller
             ]);
         }
 
+        $desc = "Suppression du matériel '{$materiel->nom}' (S/N: {$materiel->numero_serie})";
         $materiel->delete();
+
+        AuditLog::record('Suppression', 'Matériels', $desc);
 
         return redirect()->back()->with('success', 'Matériel supprimé avec succès.');
     }

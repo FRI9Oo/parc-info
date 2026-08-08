@@ -1,26 +1,49 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import Modal from '@/Components/Modal';
+import Dropdown from '@/Components/Dropdown';
 import { Head, router, usePage } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 
 export default function Index({ affectations, employes, materiels }) {
-    const { errors: pageErrors } = usePage().props;
+    const { auth = {}, errors: pageErrors } = usePage().props;
+    const { permissions = [], isAdmin = false } = auth;
+
+    const canCreate = isAdmin || permissions.includes('gerer_affectations') || permissions.includes('creer_affectation');
+    const canEdit = isAdmin || permissions.includes('gerer_affectations') || permissions.includes('modifier_affectation');
+    const canPrint = isAdmin || permissions.includes('gerer_affectations') || permissions.includes('imprimer_affectation');
+
     const today = new Date().toISOString().slice(0, 10);
+
+    // Parse URL params to detect if opened from alert banner
+    const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
+    const isFromAlert = urlParams.get('fromAlert') === 'true';
+    const highlightTargetId = urlParams.get('highlight') ? Number(urlParams.get('highlight')) : null;
 
     // ---------- Search & Filter State ----------
     const [searchQuery, setSearchQuery] = useState('');
-    const [etatFilter, setEtatFilter] = useState('all');
+    const [etatFilter, setEtatFilter] = useState(() => {
+        if (urlParams.get('filter') === 'prolonge') return 'prolonge';
+        return 'all';
+    });
 
     const filteredAffectations = useMemo(() => {
         return affectations.filter((a) => {
             if (etatFilter === 'affecte' && a.etat !== 'Affecté') return false;
             if (etatFilter === 'cloture' && a.etat !== 'Clôturé') return false;
+            if (etatFilter === 'prolonge') {
+                if (a.etat !== 'Affecté') return false;
+                const startDate = new Date(a.date_affectation);
+                const sixMonthsAgo = new Date();
+                sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+                if (startDate > sixMonthsAgo) return false;
+            }
 
             if (searchQuery.trim()) {
                 const q = searchQuery.toLowerCase().trim();
                 const matchEmpNom = a.employe?.nom?.toLowerCase().includes(q);
                 const matchEmpPrenom = a.employe?.prenom?.toLowerCase().includes(q);
                 const matchMatricule = a.employe?.matricule?.toLowerCase().includes(q);
+                const matchService = a.employe?.service?.nom_service?.toLowerCase().includes(q);
                 const matchMatNom = a.materiel?.nom?.toLowerCase().includes(q);
                 const matchMarque = a.materiel?.marque?.toLowerCase().includes(q);
                 const matchModele = a.materiel?.modele?.toLowerCase().includes(q);
@@ -28,7 +51,7 @@ export default function Index({ affectations, employes, materiels }) {
                 const matchInv = a.materiel?.numero_inventaire?.toLowerCase().includes(q);
                 const matchCat = a.materiel?.categorie?.nom_categorie?.toLowerCase().includes(q);
 
-                return matchEmpNom || matchEmpPrenom || matchMatricule || matchMatNom || matchMarque || matchModele || matchSerie || matchInv || matchCat;
+                return matchEmpNom || matchEmpPrenom || matchMatricule || matchService || matchMatNom || matchMarque || matchModele || matchSerie || matchInv || matchCat;
             }
 
             return true;
@@ -43,7 +66,7 @@ export default function Index({ affectations, employes, materiels }) {
             if (excludeId && a.id === excludeId) return false;
             const otherStart = (a.date_affectation || '').slice(0, 10);
             const otherEnd = a.date_restitution ? a.date_restitution.slice(0, 10) : '9999-12-31';
-            return newStart <= otherEnd && otherStart <= newEnd;
+            return newStart < otherEnd && otherStart < newEnd;
         });
     };
 
@@ -219,72 +242,407 @@ export default function Index({ affectations, employes, materiels }) {
         const w = window.open('', '_blank');
         if (!w) return;
 
+        const logoUrl = window.location.origin + '/images/logo.png';
+        const empNomPrenom = [a.employe?.nom, a.employe?.prenom].filter(Boolean).join(' ') || '—';
+        const serviceNom = a.employe?.service?.nom_service || 'Non attribué';
+        const divisionNom = a.employe?.service?.division?.nom_division || '';
+        const deptNom = a.employe?.service?.division?.departement?.nom_departement || '';
+        const empFonction = a.employe?.fonction || '—';
+        const empMatricule = a.employe?.matricule || '—';
+        const refNumber = `AFF-${String(a.id).padStart(5, '0')}`;
+
         w.document.write(`
-            <html>
+            <!DOCTYPE html>
+            <html lang="fr">
             <head>
-                <title>Fiche d'affectation</title>
+                <meta charset="UTF-8">
+                <title>Fiche d'Affectation - ${refNumber}</title>
                 <style>
-                    body { font-family: Arial, sans-serif; padding: 40px; color: #111; }
-                    h1 { font-size: 18px; text-align: center; margin-bottom: 24px; }
-                    .header { text-align: center; font-size: 13px; margin-bottom: 20px; }
-                    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
-                    td, th { border: 1px solid #333; padding: 6px 8px; font-size: 13px; }
-                    .field { margin: 6px 0; font-size: 14px; }
-                    .field strong { display: inline-block; width: 120px; }
-                    .conditions { font-size: 12px; margin-top: 20px; line-height: 1.6; }
-                    .signatures { display: flex; margin-top: 40px; }
-                    .signatures div { flex: 1; border: 1px solid #333; padding: 10px; font-size: 12px; min-height: 90px; }
+                    @page {
+                        size: A4 portrait;
+                        margin: 0;
+                    }
+                    * { box-sizing: border-box; }
+                    body {
+                        font-family: 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif;
+                        color: #1e293b;
+                        background: #ffffff;
+                        margin: 0;
+                        padding: 12mm 15mm;
+                        font-size: 13px;
+                        line-height: 1.5;
+                    }
+
+                    .no-print-bar {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        background: #f8fafc;
+                        border: 1px solid #cbd5e1;
+                        padding: 10px 18px;
+                        border-radius: 8px;
+                        margin-bottom: 24px;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+                    }
+                    .no-print-bar button {
+                        padding: 8px 16px;
+                        font-size: 13px;
+                        font-weight: 600;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        border: none;
+                        transition: all 0.2s;
+                    }
+                    .btn-print {
+                        background: #11508f;
+                        color: #ffffff;
+                    }
+                    .btn-print:hover {
+                        background: #0d3d6e;
+                    }
+                    .btn-close {
+                        background: #e2e8f0;
+                        color: #475569;
+                    }
+
+                    @media print {
+                        .no-print-bar { display: none !important; }
+                        body { padding: 12mm 15mm !important; }
+                    }
+
+                    .brand-bar {
+                        height: 5px;
+                        background: linear-gradient(90deg, #11508f 0%, #11508f 55%, #57b24a 55%, #57b24a 80%, #fab61e 80%, #fab61e 100%);
+                        border-radius: 3px;
+                        margin-bottom: 20px;
+                    }
+
+                    .header-container {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        margin-bottom: 20px;
+                        padding-bottom: 15px;
+                        border-bottom: 1px solid #e2e8f0;
+                    }
+                    .header-logo {
+                        max-height: 65px;
+                        max-width: 320px;
+                        object-fit: contain;
+                    }
+                    .header-company-info {
+                        text-align: right;
+                        font-size: 11px;
+                        color: #475569;
+                        line-height: 1.4;
+                    }
+                    .header-company-info strong {
+                        color: #11508f;
+                        font-size: 13px;
+                        display: block;
+                        margin-bottom: 2px;
+                    }
+
+                    .doc-title-box {
+                        background: #11508f;
+                        color: #ffffff;
+                        text-align: center;
+                        padding: 12px 16px;
+                        border-radius: 6px;
+                        margin-bottom: 24px;
+                    }
+                    .doc-title-box h1 {
+                        margin: 0;
+                        font-size: 17px;
+                        font-weight: 700;
+                        letter-spacing: 0.5px;
+                        text-transform: uppercase;
+                    }
+                    .doc-title-box .doc-meta {
+                        margin-top: 4px;
+                        font-size: 11px;
+                        color: #e2e8f0;
+                        font-weight: 400;
+                    }
+
+                    .section-title {
+                        font-size: 13px;
+                        font-weight: 700;
+                        color: #11508f;
+                        text-transform: uppercase;
+                        letter-spacing: 0.5px;
+                        margin-bottom: 10px;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                    }
+                    .section-title::before {
+                        content: '';
+                        display: inline-block;
+                        width: 4px;
+                        height: 14px;
+                        background: #57b24a;
+                        border-radius: 2px;
+                    }
+
+                    .info-card {
+                        background: #f8fafc;
+                        border: 1px solid #e2e8f0;
+                        border-left: 4px solid #11508f;
+                        border-radius: 6px;
+                        padding: 14px 18px;
+                        margin-bottom: 24px;
+                    }
+                    .grid-2col {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 10px 24px;
+                    }
+                    .info-item {
+                        display: flex;
+                        font-size: 12px;
+                    }
+                    .info-label {
+                        width: 130px;
+                        font-weight: 600;
+                        color: #475569;
+                        flex-shrink: 0;
+                    }
+                    .info-value {
+                        color: #0f172a;
+                        font-weight: 600;
+                    }
+
+                    .table-container {
+                        margin-bottom: 24px;
+                    }
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        font-size: 12px;
+                        background: #ffffff;
+                    }
+                    th {
+                        background: #11508f;
+                        color: #ffffff;
+                        font-weight: 600;
+                        text-align: left;
+                        padding: 9px 12px;
+                        border: 1px solid #11508f;
+                        font-size: 11px;
+                        text-transform: uppercase;
+                        letter-spacing: 0.3px;
+                    }
+                    td {
+                        padding: 9px 12px;
+                        border: 1px solid #cbd5e1;
+                        color: #334155;
+                    }
+                    tbody tr:nth-child(even) {
+                        background: #f8fafc;
+                    }
+
+                    .conditions-box {
+                        background: #f0fdf4;
+                        border: 1px solid #bbf7d0;
+                        border-left: 4px solid #57b24a;
+                        border-radius: 6px;
+                        padding: 14px 18px;
+                        margin-bottom: 30px;
+                        font-size: 11.5px;
+                        color: #166534;
+                    }
+                    .conditions-box strong {
+                        color: #14532d;
+                        display: block;
+                        margin-bottom: 6px;
+                        font-size: 12px;
+                        text-transform: uppercase;
+                        letter-spacing: 0.3px;
+                    }
+                    .conditions-box ul {
+                        margin: 0;
+                        padding-left: 18px;
+                        line-height: 1.6;
+                    }
+                    .conditions-box li {
+                        margin-bottom: 3px;
+                    }
+
+                    .signatures-container {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr 1fr;
+                        gap: 16px;
+                        margin-top: 24px;
+                        page-break-inside: avoid;
+                    }
+                    .signature-box {
+                        border: 1px solid #cbd5e1;
+                        border-top: 3px solid #11508f;
+                        border-radius: 6px;
+                        padding: 12px;
+                        min-height: 125px;
+                        background: #ffffff;
+                        font-size: 11.5px;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: space-between;
+                    }
+                    .signature-title {
+                        font-weight: 700;
+                        color: #11508f;
+                        margin-bottom: 8px;
+                        text-transform: uppercase;
+                        font-size: 11px;
+                        border-bottom: 1px solid #f1f5f9;
+                        padding-bottom: 4px;
+                    }
+                    .signature-field {
+                        margin-bottom: 6px;
+                        color: #334155;
+                    }
+                    .signature-field strong {
+                        color: #475569;
+                    }
+                    .signature-space {
+                        margin-top: 25px;
+                        border-top: 1px dashed #cbd5e1;
+                        padding-top: 4px;
+                        color: #94a3b8;
+                        font-style: italic;
+                        font-size: 10px;
+                        text-align: right;
+                    }
                 </style>
             </head>
             <body>
-                <div class="header">
-                    Direction SI et transformation digitale<br/>
-                    Service Infrastructure et supervision SI
-                </div>
-                <h1>Fiche d'affectation de matériel informatique</h1>
-
-                <div class="field"><strong>Date :</strong> ${formatDate(a.date_affectation)}</div>
-                <div class="field"><strong>Nom :</strong> ${a.employe?.nom ?? ''}</div>
-                <div class="field"><strong>Prénom :</strong> ${a.employe?.prenom ?? ''}</div>
-                <div class="field"><strong>Mle :</strong> ${a.employe?.matricule ?? ''}</div>
-                <div class="field"><strong>Service :</strong> ${a.employe?.service?.nom_service ?? ''}</div>
-
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Désignation</th><th>Marque</th><th>Modèle</th><th>S/N</th><th>N° Inventaire</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>${a.materiel?.nom ?? ''}</td>
-                            <td>${a.materiel?.marque ?? ''}</td>
-                            <td>${a.materiel?.modele ?? ''}</td>
-                            <td>${a.materiel?.numero_serie ?? ''}</td>
-                            <td>${a.materiel?.numero_inventaire ?? ''}</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <div class="conditions">
-                    <strong>Conditions d'utilisation et engagements :</strong><br/>
-                    - Le bénéficiaire s'engage à utiliser ce matériel exclusivement dans le cadre de ses missions professionnelles.<br/>
-                    - Il doit assurer la bonne conservation et l'entretien du matériel.<br/>
-                    - Tout problème technique ou panne doit être signalé à la DSITD.<br/>
-                    - En cas de départ ou de changement de poste, le matériel devra être restitué à la DSITD.
+                <div class="no-print-bar">
+                    <div style="font-weight: 600; color: #1e293b;">Fiche d'Affectation (${refNumber})</div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-print" onclick="window.print()">Imprimer la fiche</button>
+                        <button class="btn-close" onclick="window.close()">Fermer</button>
+                    </div>
                 </div>
 
-                <div class="signatures">
-                    <div><strong>Bénéficiaire</strong><br/>Nom et prénom :<br/>Signature :<br/>Date :</div>
-                    <div><strong>Responsable hiérarchique</strong><br/>Nom et prénom :<br/>Signature :<br/>Date :</div>
-                    <div><strong>Responsable DSITD</strong><br/>Nom et prénom :<br/>Signature :<br/>Date :</div>
+                <div class="brand-bar"></div>
+
+                <div class="header-container">
+                    <div>
+                        <img src="${logoUrl}" alt="SRM Souss-Massa SA" class="header-logo" onerror="this.style.display='none'; document.getElementById('logo-fallback').style.display='block';" />
+                        <div id="logo-fallback" style="display:none; font-weight:700; color:#11508f; font-size:15px;">
+                            Société Régionale Multiservices Souss-Massa SA
+                        </div>
+                    </div>
+                    <div class="header-company-info">
+                        <strong>Société Régionale Multiservices Souss-Massa SA</strong>
+                        Direction Systèmes d'Information & Transformation Digitale<br/>
+                        Service Infrastructure et Supervision SI
+                    </div>
+                </div>
+
+                <div class="doc-title-box">
+                    <h1>Fiche d'Affectation de Matériel Informatique</h1>
+                    <div class="doc-meta">Référence : <strong>${refNumber}</strong> | Date d'affectation : <strong>${formatDate(a.date_affectation)}</strong></div>
+                </div>
+
+                <div class="section-title">1. Informations du Bénéficiaire</div>
+                <div class="info-card">
+                    <div class="grid-2col">
+                        <div class="info-item">
+                            <span class="info-label">Nom & Prénom :</span>
+                            <span class="info-value">${empNomPrenom}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Matricule :</span>
+                            <span class="info-value">${empMatricule}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Service :</span>
+                            <span class="info-value" style="color: #11508f;">${serviceNom}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Fonction :</span>
+                            <span class="info-value">${empFonction}</span>
+                        </div>
+                        ${(divisionNom || deptNom) ? `
+                        <div class="info-item" style="grid-column: span 2;">
+                            <span class="info-label">Division / Dept :</span>
+                            <span class="info-value">${[divisionNom, deptNom].filter(Boolean).join(' — ')}</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+
+                <div class="section-title">2. Désignation du Matériel Affecté</div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Désignation</th>
+                                <th>Catégorie</th>
+                                <th>Marque</th>
+                                <th>Modèle</th>
+                                <th>N° de Série</th>
+                                <th>N° d'Inventaire</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>${a.materiel?.nom ?? '—'}</strong></td>
+                                <td>${a.materiel?.categorie?.nom_categorie ?? '—'}</td>
+                                <td>${a.materiel?.marque ?? '—'}</td>
+                                <td>${a.materiel?.modele ?? '—'}</td>
+                                <td><code style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-family:monospace;">${a.materiel?.numero_serie ?? '—'}</code></td>
+                                <td><code style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-family:monospace;">${a.materiel?.numero_inventaire ?? '—'}</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="conditions-box">
+                    <strong>Engagements du Bénéficiaire & Conditions d'Utilisation :</strong>
+                    <ul>
+                        <li>Le bénéficiaire s'engage à utiliser ce matériel exclusivement dans le cadre de ses activités professionnelles.</li>
+                        <li>Il est responsable de la bonne conservation, de la sécurité et du soin apporté au matériel confié.</li>
+                        <li>Toute anomalie, panne, perte ou vol doit être immédiatement signalé à la DSITD.</li>
+                        <li>En cas de changement de service, de poste ou de cessation de fonction, le matériel doit être restitué sans délai à la DSITD.</li>
+                    </ul>
+                </div>
+
+                <div class="section-title">3. Émargement & Validation</div>
+                <div class="signatures-container">
+                    <div class="signature-box">
+                        <div>
+                            <div class="signature-title">Le Bénéficiaire</div>
+                            <div class="signature-field"><strong>Nom & Prénom :</strong> ${empNomPrenom}</div>
+                            <div class="signature-field"><strong>Date :</strong></div>
+                        </div>
+                        <div class="signature-space">Signature du bénéficiaire</div>
+                    </div>
+
+                    <div class="signature-box">
+                        <div>
+                            <div class="signature-title">Responsable Hiérarchique</div>
+                            <div class="signature-field"><strong>Nom & Prénom :</strong></div>
+                            <div class="signature-field"><strong>Date :</strong></div>
+                        </div>
+                        <div class="signature-space">Signature & Visa</div>
+                    </div>
+
+                    <div class="signature-box">
+                        <div>
+                            <div class="signature-title">Direction DSITD</div>
+                            <div class="signature-field"><strong>Nom & Prénom :</strong></div>
+                            <div class="signature-field"><strong>Date :</strong></div>
+                        </div>
+                        <div class="signature-space">Signature & Cachet</div>
+                    </div>
                 </div>
             </body>
             </html>
         `);
         w.document.close();
         w.focus();
-        w.print();
     };
 
     return (
@@ -306,95 +664,118 @@ export default function Index({ affectations, employes, materiels }) {
                     )}
 
                     {/* Ajouter une affectation */}
-                    <div className="bg-white shadow-sm sm:rounded-lg p-6 mb-6">
-                        <h1 className="text-xl font-semibold mb-4">Affecter un matériel</h1>
-                        <form onSubmit={submitAdd} className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                            <input
-                                type="date"
-                                value={addData.date_affectation}
-                                onChange={(e) => setAddData({ ...addData, date_affectation: e.target.value })}
-                                className="border rounded px-3 py-2"
-                            />
-                            <input
-                                type="text"
-                                placeholder="Matricule employé"
-                                value={addData.matricule}
-                                onChange={(e) => setAddData({ ...addData, matricule: e.target.value })}
-                                className="border rounded px-3 py-2"
-                            />
-                            <select
-                                value={addData.search_type}
-                                onChange={(e) => setAddData({ ...addData, search_type: e.target.value, search_value: '' })}
-                                className="border rounded px-3 py-2"
-                            >
-                                <option value="serie">Rechercher par N° Série</option>
-                                <option value="inventaire">Rechercher par N° Inventaire</option>
-                            </select>
-                            <input
-                                type="text"
-                                placeholder={addData.search_type === 'serie' ? 'N° Série' : 'N° Inventaire'}
-                                value={addData.search_value}
-                                onChange={(e) => setAddData({ ...addData, search_value: e.target.value })}
-                                className="border rounded px-3 py-2"
-                            />
+                    {canCreate && (
+                        <div className="bg-white shadow-sm sm:rounded-lg p-6 mb-6">
+                            <h1 className="text-xl font-semibold mb-4">Affecter un matériel</h1>
+                            <form onSubmit={submitAdd} className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                                <input
+                                    type="date"
+                                    value={addData.date_affectation}
+                                    onChange={(e) => setAddData({ ...addData, date_affectation: e.target.value })}
+                                    className="border rounded px-3 py-2"
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="Matricule employé"
+                                    value={addData.matricule}
+                                    onChange={(e) => setAddData({ ...addData, matricule: e.target.value })}
+                                    className="border rounded px-3 py-2"
+                                />
+                                <select
+                                    value={addData.search_type}
+                                    onChange={(e) => setAddData({ ...addData, search_type: e.target.value, search_value: '' })}
+                                    className="border rounded px-3 py-2"
+                                >
+                                    <option value="serie">Rechercher par N° Série</option>
+                                    <option value="inventaire">Rechercher par N° Inventaire</option>
+                                </select>
+                                <input
+                                    type="text"
+                                    placeholder={addData.search_type === 'serie' ? 'N° Série' : 'N° Inventaire'}
+                                    value={addData.search_value}
+                                    onChange={(e) => setAddData({ ...addData, search_value: e.target.value })}
+                                    className="border rounded px-3 py-2"
+                                />
 
-                            <div className="md:col-span-4 grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                                <div className={`px-3 py-2 rounded border ${matchedEmploye ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
-                                    {matchedEmploye
-                                        ? `Employé trouvé : ${matchedEmploye.nom} ${matchedEmploye.prenom}`
-                                        : addData.matricule
-                                            ? 'Aucun employé avec ce matricule'
-                                            : 'En attente de matricule...'}
+                                <div className="md:col-span-4 grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                                    <div className={`px-3 py-2 rounded border ${matchedEmploye ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
+                                        {matchedEmploye
+                                            ? `Employé trouvé : ${matchedEmploye.nom} ${matchedEmploye.prenom} [Service : ${matchedEmploye.service?.nom_service ?? 'Non attribué'}]`
+                                            : addData.matricule
+                                                ? 'Aucun employé avec ce matricule'
+                                                : 'En attente de matricule...'}
+                                    </div>
+                                    <div className={`px-3 py-2 rounded border ${matchedMateriel && !matchedMateriel.unavailable ? 'bg-green-50 border-green-200'
+                                            : matchedMateriel?.unavailable ? 'bg-red-50 border-red-200'
+                                                : 'bg-gray-50 border-gray-200'
+                                        }`}>
+                                        {matchedMateriel?.unavailable
+                                            ? `Ce matériel est déjà affecté sur cette période (${matchedMateriel.nom})`
+                                            : matchedMateriel
+                                                ? `Matériel trouvé : ${matchedMateriel.nom} — ${matchedMateriel.marque} ${matchedMateriel.modele} [Catégorie : ${matchedMateriel.categorie?.nom_categorie ?? 'N/A'}]`
+                                                : addData.search_value
+                                                    ? 'Aucun matériel avec ce numéro'
+                                                    : 'En attente de numéro...'}
+                                    </div>
                                 </div>
-                                <div className={`px-3 py-2 rounded border ${matchedMateriel && !matchedMateriel.unavailable ? 'bg-green-50 border-green-200'
-                                        : matchedMateriel?.unavailable ? 'bg-red-50 border-red-200'
-                                            : 'bg-gray-50 border-gray-200'
-                                    }`}>
-                                    {matchedMateriel?.unavailable
-                                        ? `Ce matériel est déjà affecté sur cette période (${matchedMateriel.nom})`
-                                        : matchedMateriel
-                                            ? `Matériel trouvé : ${matchedMateriel.nom} — ${matchedMateriel.marque} ${matchedMateriel.modele} [Catégorie : ${matchedMateriel.categorie?.nom_categorie ?? 'N/A'}]`
-                                            : addData.search_value
-                                                ? 'Aucun matériel avec ce numéro'
-                                                : 'En attente de numéro...'}
-                                </div>
-                            </div>
 
-                            <button
-                                type="submit"
-                                disabled={isSubmitting || !matchedEmploye || !matchedMateriel || matchedMateriel.unavailable}
-                                className="bg-gray-800 text-white px-4 py-2 rounded md:col-span-4 hover:bg-gray-700 transition disabled:opacity-50"
-                            >
-                                {isSubmitting ? 'Affectation en cours...' : 'Affecter'}
-                            </button>
-                        </form>
-                    </div>
+                                <button
+                                    type="submit"
+                                    disabled={isSubmitting || !matchedEmploye || !matchedMateriel || matchedMateriel.unavailable}
+                                    className="bg-gray-800 text-white px-4 py-2 rounded md:col-span-4 hover:bg-gray-700 transition disabled:opacity-50"
+                                >
+                                    {isSubmitting ? 'Affectation en cours...' : 'Affecter'}
+                                </button>
+                            </form>
+                        </div>
+                    )}
 
                     {/* Tableau */}
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                    <div className="lux-card p-6">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                            <h1 className="text-xl font-semibold text-gray-800">Historique des affectations ({filteredAffectations.length})</h1>
+                            <div className="flex items-center gap-4">
+                                <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">Historique des affectations ({filteredAffectations.length})</h1>
+                                <a
+                                    href={route('exports.affectations.csv')}
+                                    className="inline-flex items-center bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-md shadow-emerald-600/10"
+                                >
+                                    📥 Exporter CSV
+                                </a>
+                            </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1 md:max-w-xl">
                                 <input
                                     type="text"
-                                    placeholder="Rechercher (Employé, Matériel, S/N, Inv...)"
+                                    placeholder="Rechercher (Employé, Service, Matériel, S/N...)"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="border rounded px-3 py-1.5 text-sm w-full"
+                                    className="border border-slate-200 rounded-xl px-3.5 py-2 text-sm w-full focus:ring-1 focus:ring-[#11508f] bg-slate-50/50"
                                 />
 
                                 <select
                                     value={etatFilter}
                                     onChange={(e) => setEtatFilter(e.target.value)}
-                                    className="border rounded px-3 py-1.5 text-sm w-full bg-white"
+                                    className="border border-slate-200 rounded-xl px-3.5 py-2 text-sm w-full bg-white focus:ring-1 focus:ring-[#11508f]"
                                 >
                                     <option value="all">Tous les états</option>
-                                    <option value="affecte">Affectés seulement</option>
-                                    <option value="cloture">Clôturés seulement</option>
+                                    <option value="Affecté">Affecté (En cours)</option>
+                                    <option value="Clôturé">Clôturé (Restitué)</option>
+                                    <option value="prolonge">⚠️ Prolongés (> 6 mois)</option>
                                 </select>
                             </div>
                         </div>
+
+                        {/* Long-Standing Filter Banner Alert */}
+                        {isFromAlert && (
+                            <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center justify-between text-xs text-amber-900 dark:text-amber-300">
+                                <span className="font-semibold flex items-center gap-2">
+                                    ⚠️ Affichage des affectations prolongées en surbrillance suite à l'accès depuis l'alerte du tableau de bord.
+                                </span>
+                                <a href={route('affectations.index')} className="text-amber-800 underline hover:text-amber-950 font-medium">
+                                    Réinitialiser l'affichage standard
+                                </a>
+                            </div>
+                        )}
 
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
@@ -404,6 +785,7 @@ export default function Index({ affectations, employes, materiels }) {
                                         <th className="py-2 px-3 whitespace-nowrap">Nom</th>
                                         <th className="py-2 px-3 whitespace-nowrap">Prénom</th>
                                         <th className="py-2 px-3 whitespace-nowrap">Matricule</th>
+                                        <th className="py-2 px-3 whitespace-nowrap">Service</th>
                                         <th className="py-2 px-3 whitespace-nowrap">Nom matériel</th>
                                         <th className="py-2 px-3 whitespace-nowrap">Marque</th>
                                         <th className="py-2 px-3 whitespace-nowrap">Modèle</th>
@@ -416,41 +798,126 @@ export default function Index({ affectations, employes, materiels }) {
                                     </tr>
                                 </thead>
                                 <tbody className="text-sm">
-                                    {filteredAffectations.map((a) => (
-                                        <tr key={a.id} className="border-b hover:bg-gray-50 transition">
-                                            <td className="py-2 px-3 whitespace-nowrap">{formatDate(a.date_affectation)}</td>
-                                            <td className="py-2 px-3 whitespace-nowrap">{a.employe?.nom}</td>
-                                            <td className="py-2 px-3 whitespace-nowrap">{a.employe?.prenom}</td>
-                                            <td className="py-2 px-3 whitespace-nowrap">{a.employe?.matricule}</td>
-                                            <td className="py-2 px-3 whitespace-nowrap">{a.materiel?.nom}</td>
-                                            <td className="py-2 px-3 whitespace-nowrap">{a.materiel?.marque}</td>
-                                            <td className="py-2 px-3 whitespace-nowrap">{a.materiel?.modele}</td>
-                                            <td className="py-2 px-3 whitespace-nowrap">{a.materiel?.numero_serie}</td>
-                                            <td className="py-2 px-3 whitespace-nowrap">{a.materiel?.numero_inventaire}</td>
-                                            <td className="py-2 px-3 whitespace-nowrap">{a.materiel?.categorie?.nom_categorie}</td>
-                                            <td className="py-2 px-3 whitespace-nowrap">{formatDate(a.date_restitution)}</td>
-                                            <td className="py-2 px-3 whitespace-nowrap">{etatBadge(a.etat)}</td>
-                                            <td className="py-2 px-3">
-                                                <div className="flex gap-2 flex-wrap">
-                                                    <button onClick={() => setVoirAffectation(a)} className="text-gray-600 text-sm font-medium hover:text-gray-900">Voir</button>
-                                                    {a.etat === 'Affecté' && (
-                                                        <>
-                                                            <button onClick={() => openEdit(a)} className="text-blue-600 text-sm font-medium hover:text-blue-800">Modifier</button>
-                                                            <button onClick={() => openCloturer(a)} className="text-indigo-600 text-sm font-medium hover:text-indigo-800">Clôturer</button>
-                                                        </>
-                                                    )}
-                                                    {a.etat === 'Clôturé' && (
-                                                        <>
-                                                            <button onClick={() => openCloturer(a)} className="text-blue-600 text-sm font-medium hover:text-blue-800">Modifier la clôture</button>
-                                                            <button onClick={() => annulerCloture(a)} className="text-orange-600 text-sm font-medium hover:text-orange-800">Annuler clôture</button>
-                                                        </>
-                                                    )}
-                                                    <button onClick={() => imprimer(a)} className="text-purple-600 text-sm font-medium hover:text-purple-800">Imprimer</button>
-                                                    <button onClick={() => destroy(a.id)} className="text-red-600 text-sm font-medium hover:text-red-800">Supprimer</button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                    {filteredAffectations.map((a, index) => {
+                                        const isProlonged = a.etat === 'Affecté' && new Date(a.date_affectation) <= new Date(new Date().setMonth(new Date().getMonth() - 6));
+                                        const isHighlighted = isFromAlert && (highlightTargetId ? a.id === highlightTargetId : isProlonged);
+
+                                        return (
+                                            <tr
+                                                key={a.id}
+                                                className={`border-b transition ${isHighlighted ? 'bg-amber-100/80 ring-2 ring-amber-400 font-medium' : 'hover:bg-gray-50'}`}
+                                            >
+                                                <td className="py-2 px-3 whitespace-nowrap">{formatDate(a.date_affectation)}</td>
+                                                <td className="py-2 px-3 whitespace-nowrap">{a.employe?.nom}</td>
+                                                <td className="py-2 px-3 whitespace-nowrap">{a.employe?.prenom}</td>
+                                                <td className="py-2 px-3 whitespace-nowrap">{a.employe?.matricule}</td>
+                                                <td className="py-2 px-3 whitespace-nowrap font-medium text-slate-700">{a.employe?.service?.nom_service ?? '—'}</td>
+                                                <td className="py-2 px-3 whitespace-nowrap">{a.materiel?.nom}</td>
+                                                <td className="py-2 px-3 whitespace-nowrap">{a.materiel?.marque}</td>
+                                                <td className="py-2 px-3 whitespace-nowrap">{a.materiel?.modele}</td>
+                                                <td className="py-2 px-3 whitespace-nowrap">{a.materiel?.numero_serie}</td>
+                                                <td className="py-2 px-3 whitespace-nowrap">{a.materiel?.numero_inventaire}</td>
+                                                <td className="py-2 px-3 whitespace-nowrap">{a.materiel?.categorie?.nom_categorie}</td>
+                                                <td className="py-2 px-3 whitespace-nowrap">{formatDate(a.date_restitution)}</td>
+                                                <td className="py-2 px-3 whitespace-nowrap">
+                                                    <div className="flex items-center gap-1.5">
+                                                        {etatBadge(a.etat)}
+                                                        {isHighlighted && (
+                                                            <span className="text-[10px] bg-amber-200 text-amber-900 px-2 py-0.5 rounded font-bold uppercase tracking-wider">
+                                                                Alerte Prolongée
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className="py-2 px-3">
+                                                    <div className="relative inline-block text-left">
+                                                        <Dropdown>
+                                                            <Dropdown.Trigger>
+                                                                <button
+                                                                    type="button"
+                                                                    className="inline-flex items-center px-3 py-1.5 border border-slate-200 text-xs font-bold rounded-xl text-slate-700 bg-white hover:bg-slate-50 hover:border-slate-300 transition shadow-sm gap-1.5"
+                                                                >
+                                                                    <span>Actions</span>
+                                                                    <span className="text-[10px] text-slate-400">▼</span>
+                                                                </button>
+                                                            </Dropdown.Trigger>
+
+                                                            <Dropdown.Content align="right" width="48">
+                                                                <button
+                                                                    onClick={() => setVoirAffectation(a)}
+                                                                    className="w-full text-left px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                                                                >
+                                                                    <span>👁️</span>
+                                                                    <span>Consulter les détails</span>
+                                                                </button>
+
+                                                                {canEdit && (
+                                                                    <button
+                                                                        onClick={() => openEdit(a)}
+                                                                        className="w-full text-left px-3.5 py-2 text-xs font-semibold text-[#11508f] hover:bg-blue-50 flex items-center gap-2"
+                                                                    >
+                                                                        <span>✏️</span>
+                                                                        <span>Modifier l'affectation</span>
+                                                                    </button>
+                                                                )}
+
+                                                                {canEdit && a.etat === 'Affecté' && (
+                                                                    <button
+                                                                        onClick={() => openCloturer(a)}
+                                                                        className="w-full text-left px-3.5 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 flex items-center gap-2"
+                                                                    >
+                                                                        <span>🔒</span>
+                                                                        <span>Clôturer / Restituer</span>
+                                                                    </button>
+                                                                )}
+
+                                                                {canEdit && a.etat === 'Clôturé' && (
+                                                                    <>
+                                                                        <button
+                                                                            onClick={() => openCloturer(a)}
+                                                                            className="w-full text-left px-3.5 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-50 flex items-center gap-2"
+                                                                        >
+                                                                            <span>📝</span>
+                                                                            <span>Modifier la clôture</span>
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => annulerCloture(a)}
+                                                                            className="w-full text-left px-3.5 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50 flex items-center gap-2"
+                                                                        >
+                                                                            <span>🔓</span>
+                                                                            <span>Annuler la clôture</span>
+                                                                        </button>
+                                                                    </>
+                                                                )}
+
+                                                                {canPrint && (
+                                                                    <a
+                                                                        href={route('affectations.print', a.id)}
+                                                                        target="_blank"
+                                                                        rel="noreferrer"
+                                                                        className="w-full text-left px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2 block border-t border-slate-100"
+                                                                    >
+                                                                        <span>🖨️</span>
+                                                                        <span>Imprimer la fiche A4</span>
+                                                                    </a>
+                                                                )}
+
+                                                                {canEdit && (
+                                                                    <button
+                                                                        onClick={() => destroy(a.id)}
+                                                                        className="w-full text-left px-3.5 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 flex items-center gap-2 border-t border-slate-100"
+                                                                    >
+                                                                        <span>🗑️</span>
+                                                                        <span>Supprimer</span>
+                                                                    </button>
+                                                                )}
+                                                            </Dropdown.Content>
+                                                        </Dropdown>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>
@@ -465,19 +932,46 @@ export default function Index({ affectations, employes, materiels }) {
             {/* Modal Voir */}
             <Modal show={!!voirAffectation} onClose={() => setVoirAffectation(null)} maxWidth="lg">
                 {voirAffectation && (
-                    <div className="p-6 space-y-2 text-sm">
-                        <h2 className="text-lg font-medium mb-4">Détail de l'affectation</h2>
-                        <p><strong>Employé :</strong> {voirAffectation.employe?.nom} {voirAffectation.employe?.prenom} ({voirAffectation.employe?.matricule})</p>
-                        <p><strong>Service :</strong> {voirAffectation.employe?.service?.nom_service}</p>
-                        <p><strong>Matériel :</strong> {voirAffectation.materiel?.nom} — {voirAffectation.materiel?.marque} {voirAffectation.materiel?.modele}</p>
-                        <p><strong>N° Série :</strong> {voirAffectation.materiel?.numero_serie}</p>
-                        <p><strong>N° Inventaire :</strong> {voirAffectation.materiel?.numero_inventaire}</p>
-                        <p><strong>Catégorie :</strong> {voirAffectation.materiel?.categorie?.nom_categorie}</p>
-                        <p><strong>Date d'affectation :</strong> {formatDate(voirAffectation.date_affectation)}</p>
-                        <p><strong>Date de restitution :</strong> {formatDate(voirAffectation.date_restitution)}</p>
-                        <p><strong>État :</strong> {voirAffectation.etat}</p>
-                        <div className="flex justify-end pt-4">
-                            <button onClick={() => setVoirAffectation(null)} className="text-gray-600 text-sm">Fermer</button>
+                    <div className="p-6 space-y-4 text-sm">
+                        <div className="flex items-center justify-between border-b pb-3">
+                            <h2 className="text-lg font-semibold text-gray-800">Détail de l'affectation #AFF-{String(voirAffectation.id).padStart(5, '0')}</h2>
+                            {etatBadge(voirAffectation.etat)}
+                        </div>
+
+                        <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-2">
+                            <p className="text-xs uppercase font-bold text-slate-500 tracking-wider">Informations Bénéficiaire</p>
+                            <p><strong>Employé :</strong> {voirAffectation.employe?.nom} {voirAffectation.employe?.prenom} <span className="text-slate-500">({voirAffectation.employe?.matricule})</span></p>
+                            <p><strong>Service :</strong> <span className="font-semibold text-blue-700">{voirAffectation.employe?.service?.nom_service || 'Non attribué'}</span></p>
+                            {voirAffectation.employe?.fonction && <p><strong>Fonction :</strong> {voirAffectation.employe?.fonction}</p>}
+                        </div>
+
+                        <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-2">
+                            <p className="text-xs uppercase font-bold text-slate-500 tracking-wider">Détails du Matériel</p>
+                            <p><strong>Matériel :</strong> {voirAffectation.materiel?.nom} — {voirAffectation.materiel?.marque} {voirAffectation.materiel?.modele}</p>
+                            <p><strong>N° Série :</strong> <code className="bg-slate-200 px-1.5 py-0.5 rounded text-xs">{voirAffectation.materiel?.numero_serie || '—'}</code></p>
+                            <p><strong>N° Inventaire :</strong> <code className="bg-slate-200 px-1.5 py-0.5 rounded text-xs">{voirAffectation.materiel?.numero_inventaire || '—'}</code></p>
+                            <p><strong>Catégorie :</strong> {voirAffectation.materiel?.categorie?.nom_categorie || '—'}</p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                            <div>
+                                <p className="text-xs text-slate-500 font-semibold">Date d'affectation</p>
+                                <p className="font-medium text-slate-800">{formatDate(voirAffectation.date_affectation)}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs text-slate-500 font-semibold">Date de restitution</p>
+                                <p className="font-medium text-slate-800">{formatDate(voirAffectation.date_restitution)}</p>
+                            </div>
+                        </div>
+
+                        <div className="flex justify-between items-center pt-2 border-t">
+                            <button
+                                onClick={() => imprimer(voirAffectation)}
+                                className="inline-flex items-center gap-2 bg-[#11508f] text-white px-4 py-2 rounded-md hover:bg-[#0d3d6e] transition font-medium text-sm"
+                            >
+                                Imprimer la fiche
+                            </button>
+                            <button onClick={() => setVoirAffectation(null)} className="text-slate-600 text-sm font-medium hover:text-slate-900">Fermer</button>
                         </div>
                     </div>
                 )}

@@ -158,4 +158,26 @@ class AffectationTest extends TestCase
         $response->assertSessionHasNoErrors();
         $this->assertCount(2, AffectationMateriel::all());
     }
+
+    public function test_same_day_handover_is_allowed(): void
+    {
+        // 1. Employee 1 returns equipment on 2026-08-08
+        AffectationMateriel::create([
+            'employe_id' => $this->employe1->id,
+            'materiel_id' => $this->materiel1->id,
+            'date_affectation' => '2026-08-01',
+            'date_restitution' => '2026-08-08',
+        ]);
+
+        // 2. Employee 2 receives equipment on the exact same day (2026-08-08)
+        $response = $this->actingAs($this->user)->post(route('affectations.store'), [
+            'employe_id' => $this->employe2->id,
+            'materiel_id' => $this->materiel1->id,
+            'date_affectation' => '2026-08-08',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHasNoErrors();
+        $this->assertCount(2, AffectationMateriel::all());
+    }
 }

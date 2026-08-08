@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Role;
+use App\Models\AuditLog;
 use App\Models\Permission;
+use App\Models\Role;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -13,7 +14,7 @@ class RoleController extends Controller
     {
         return Inertia::render('Roles/Index', [
             'roles' => Role::with('permissions')->withCount('users')->get(),
-            'permissions' => Permission::all(),
+            'permissions' => Permission::orderBy('module')->orderBy('id')->get(),
         ]);
     }
 
@@ -32,6 +33,8 @@ class RoleController extends Controller
         ]);
 
         $role->permissions()->sync($validated['permission_ids'] ?? []);
+
+        AuditLog::record('Création', 'Rôles', "Création du rôle '{$role->nom_role}' avec " . count($validated['permission_ids'] ?? []) . " permission(s)", $role);
 
         return redirect()->back();
     }
@@ -52,6 +55,8 @@ class RoleController extends Controller
 
         $role->permissions()->sync($validated['permission_ids'] ?? []);
 
+        AuditLog::record('Modification', 'Rôles', "Mise à jour du rôle '{$role->nom_role}' (Permissions: " . count($validated['permission_ids'] ?? []) . ")", $role);
+
         return redirect()->back();
     }
 
@@ -63,7 +68,10 @@ class RoleController extends Controller
             ]);
         }
 
+        $desc = "Suppression du rôle '{$role->nom_role}'";
         $role->delete();
+
+        AuditLog::record('Suppression', 'Rôles', $desc);
 
         return redirect()->back();
     }

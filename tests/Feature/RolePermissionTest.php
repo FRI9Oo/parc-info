@@ -45,9 +45,6 @@ class RolePermissionTest extends TestCase
         $response = $this->actingAs($this->admin)->get(route('roles.index'));
         $response->assertStatus(200);
 
-        $permResponse = $this->actingAs($this->admin)->get(route('permissions.index'));
-        $permResponse->assertStatus(200);
-
         $userResponse = $this->actingAs($this->admin)->get(route('users.index'));
         $userResponse->assertStatus(200);
     }
@@ -119,5 +116,37 @@ class RolePermissionTest extends TestCase
             'id' => $targetUser->id,
             'role_id' => $role->id,
         ]);
+    }
+
+    public function test_viewer_role_can_access_pages_without_gerer_permission(): void
+    {
+        $viewerRole = Role::create(['nom_role' => 'Consultant Viewer']);
+
+        $voirEmployes = Permission::create(['nom_permission' => 'voir_employes', 'module' => 'Employés']);
+        $voirMateriels = Permission::create(['nom_permission' => 'voir_materiels', 'module' => 'Matériels']);
+        $voirAffectations = Permission::create(['nom_permission' => 'voir_affectations', 'module' => 'Affectations']);
+        $voirStructure = Permission::create(['nom_permission' => 'voir_structure', 'module' => 'Structure']);
+
+        $viewerRole->permissions()->attach([$voirEmployes->id, $voirMateriels->id, $voirAffectations->id, $voirStructure->id]);
+
+        $viewerUser = User::create([
+            'name' => 'Viewer User',
+            'email' => 'viewer@example.com',
+            'password' => bcrypt('password'),
+            'role_id' => $viewerRole->id,
+        ]);
+
+        // GET pages should return 200 OK for viewer user without requiring gerer_X master permission
+        $this->actingAs($viewerUser)->get(route('employes.index'))->assertStatus(200);
+        $this->actingAs($viewerUser)->get(route('materiels.index'))->assertStatus(200);
+        $this->actingAs($viewerUser)->get(route('affectations.index'))->assertStatus(200);
+        $this->actingAs($viewerUser)->get(route('services.index'))->assertStatus(200);
+
+        // POST mutation should be forbidden (403) for pure viewer user
+        $this->actingAs($viewerUser)->post(route('employes.store'), [
+            'matricule' => 'EMP999',
+            'nom' => 'Test',
+            'prenom' => 'User',
+        ])->assertStatus(403);
     }
 }

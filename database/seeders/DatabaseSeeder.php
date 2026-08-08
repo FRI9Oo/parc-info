@@ -39,17 +39,49 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $permissions = [
-            ['nom_permission' => 'gerer_affectations', 'description_permission' => 'Créer, modifier, clôturer et imprimer les affectations'],
-            ['nom_permission' => 'gerer_materiels', 'description_permission' => 'Ajouter, éditer et supprimer des équipements'],
-            ['nom_permission' => 'gerer_employes', 'description_permission' => 'Gérer les fiches des employés'],
-            ['nom_permission' => 'gerer_structure', 'description_permission' => 'Gérer la structure administrative (Directions, Services)'],
+            // 📋 Affectations
+            ['nom_permission' => 'gerer_affectations', 'module' => 'Affectations', 'libelle' => 'Gestion Complète des Affectations', 'description_permission' => 'Tout autoriser sur les affectations'],
+            ['nom_permission' => 'voir_affectations', 'module' => 'Affectations', 'libelle' => 'Consulter les affectations', 'description_permission' => 'Afficher la liste et les détails des affectations'],
+            ['nom_permission' => 'creer_affectation', 'module' => 'Affectations', 'libelle' => 'Affecter un matériel', 'description_permission' => 'Attribuer du matériel aux employés'],
+            ['nom_permission' => 'modifier_affectation', 'module' => 'Affectations', 'libelle' => 'Modifier & Clôturer les affectations', 'description_permission' => 'Gérer les clôtures et réactivations'],
+            ['nom_permission' => 'imprimer_affectation', 'module' => 'Affectations', 'libelle' => 'Imprimer la fiche d\'affectation', 'description_permission' => 'Générer et imprimer les fiches officielles'],
+
+            // 💻 Matériels
+            ['nom_permission' => 'gerer_materiels', 'module' => 'Matériels', 'libelle' => 'Gestion Complète du Parc', 'description_permission' => 'Tout autoriser sur les matériels et catégories'],
+            ['nom_permission' => 'voir_materiels', 'module' => 'Matériels', 'libelle' => 'Consulter le parc et catégories', 'description_permission' => 'Afficher l\'inventaire et la disponibilité'],
+            ['nom_permission' => 'creer_materiel', 'module' => 'Matériels', 'libelle' => 'Ajouter équipements & catégories', 'description_permission' => 'Enregistrer de nouveaux équipements'],
+            ['nom_permission' => 'modifier_materiel', 'module' => 'Matériels', 'libelle' => 'Modifier équipements & catégories', 'description_permission' => 'Éditer les caractéristiques'],
+            ['nom_permission' => 'supprimer_materiel', 'module' => 'Matériels', 'libelle' => 'Supprimer des équipements', 'description_permission' => 'Retirer un matériel ou une catégorie'],
+
+            // 👥 Employés
+            ['nom_permission' => 'gerer_employes', 'module' => 'Employés', 'libelle' => 'Gestion Complète des Employés', 'description_permission' => 'Tout autoriser sur les fiches du personnel'],
+            ['nom_permission' => 'voir_employes', 'module' => 'Employés', 'libelle' => 'Consulter l\'annuaire des employés', 'description_permission' => 'Afficher la liste des employés'],
+            ['nom_permission' => 'creer_employe', 'module' => 'Employés', 'libelle' => 'Ajouter un employé', 'description_permission' => 'Créer de nouvelles fiches d\'employés'],
+            ['nom_permission' => 'modifier_employe', 'module' => 'Employés', 'libelle' => 'Modifier un employé', 'description_permission' => 'Éditer le profil et l\'affectation de service'],
+            ['nom_permission' => 'supprimer_employe', 'module' => 'Employés', 'libelle' => 'Supprimer un employé', 'description_permission' => 'Retirer un employé de la base'],
+
+            // 🏛️ Structure
+            ['nom_permission' => 'gerer_structure', 'module' => 'Structure', 'libelle' => 'Gestion Complète de la Structure', 'description_permission' => 'Tout autoriser sur la structure administrative'],
+            ['nom_permission' => 'voir_structure', 'module' => 'Structure', 'libelle' => 'Consulter l\'organigramme', 'description_permission' => 'Afficher Directions, Départements, Divisions et Services'],
+            ['nom_permission' => 'modifier_structure', 'module' => 'Structure', 'libelle' => 'Créer & Modifier la structure', 'description_permission' => 'Gérer les entités administratives'],
+            ['nom_permission' => 'supprimer_structure', 'module' => 'Structure', 'libelle' => 'Supprimer des entités', 'description_permission' => 'Supprimer des éléments de l\'organigramme'],
+
+            // 📜 Journal d'Audit
+            ['nom_permission' => 'voir_audit_logs', 'module' => 'Journal d\'Audit', 'libelle' => 'Consulter le journal d\'audit', 'description_permission' => 'Afficher l\'historique détaillé des actions système'],
         ];
 
         foreach ($permissions as $pData) {
             $perm = Permission::create($pData);
             $adminRole->permissions()->attach($perm->id);
-            if ($perm->nom_permission !== 'gerer_structure') {
+
+            // Assign Manager permissions
+            if (in_array($perm->module, ['Affectations', 'Matériels', 'Employés'])) {
                 $managerRole->permissions()->attach($perm->id);
+            }
+
+            // Assign Viewer permissions
+            if (str_starts_with($perm->nom_permission, 'voir_')) {
+                $viewerRole->permissions()->attach($perm->id);
             }
         }
 
