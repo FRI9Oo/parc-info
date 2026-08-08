@@ -1,3 +1,4 @@
+import ApplicationLogo from '@/Components/ApplicationLogo';
 import { Head } from '@inertiajs/react';
 import { useEffect } from 'react';
 
@@ -28,163 +29,205 @@ export default function Print({ affectation }) {
 
     return (
         <div className="min-h-screen bg-slate-100 p-4 sm:p-8 text-slate-900 font-sans print:p-0 print:bg-white">
-            <Head title={`Impression ${codeAff}`} />
+            {/* Empty title prevents browser from printing title in header */}
+            <Head title="" />
+
+            <style>{`
+                @page {
+                    size: A4 portrait;
+                    margin: 0mm !important;
+                }
+                @media print {
+                    @page {
+                        size: A4 portrait;
+                        margin: 0mm !important;
+                    }
+                    html, body {
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        background: #ffffff !important;
+                    }
+                    .print-sheet-wrapper {
+                        padding: 10mm 14mm !important;
+                        margin: 0 !important;
+                        border: none !important;
+                        box-shadow: none !important;
+                        width: 100% !important;
+                    }
+                    .print-hidden-controls {
+                        display: none !important;
+                    }
+                }
+            `}</style>
 
             {/* Print action controls (Hidden during print) */}
-            <div className="max-w-4xl mx-auto mb-6 flex justify-between items-center bg-white p-4 rounded-lg shadow print:hidden">
+            <div className="max-w-4xl mx-auto mb-6 flex justify-between items-center bg-white p-4 rounded-xl shadow border border-slate-200 print-hidden-controls print:hidden">
                 <div>
-                    <h1 className="font-bold text-slate-800">Fiche de Prise en Charge ({codeAff})</h1>
-                    <p className="text-xs text-slate-500">Prêt pour l'impression ou l'export au format PDF</p>
+                    <h1 className="font-extrabold text-slate-900">Fiche de Prise en Charge ({codeAff})</h1>
+                    <p className="text-xs text-slate-500">Document A4 officiel prêt pour l'impression ou l'export PDF</p>
                 </div>
                 <div className="flex gap-3">
                     <button
                         onClick={() => window.history.back()}
-                        className="px-4 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition"
+                        className="px-4 py-2 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition"
                     >
                         ← Retour
                     </button>
                     <button
                         onClick={() => window.print()}
-                        className="px-4 py-2 text-xs font-semibold text-white bg-[#11508f] hover:bg-[#0d3d6e] rounded-lg transition flex items-center gap-2"
+                        className="btn-zellij px-5 py-2 rounded-xl text-xs font-extrabold flex items-center gap-2"
                     >
-                        🖨️ Imprimer le Document
+                        🖨️ Imprimer la Fiche
                     </button>
                 </div>
             </div>
 
-            {/* Printable Document Container (A4 layout styled) */}
-            <div className="max-w-4xl mx-auto bg-white p-10 rounded-lg shadow-sm border border-slate-200 print:shadow-none print:border-none print:p-0 print:max-w-none">
+            {/* Printable Document Container (Exact Replica of Target PDF Design) */}
+            <div className="print-sheet-wrapper max-w-4xl mx-auto bg-white p-10 rounded-2xl shadow-sm border border-slate-200 print:shadow-none print:border-none print:p-0 print:max-w-none">
 
-                {/* Header */}
-                <div className="flex justify-between items-center border-b-2 border-slate-800 pb-6 mb-8">
-                    <div>
-                        <div className="text-xs uppercase font-bold text-slate-500 tracking-wider">Royaume du Maroc</div>
-                        <div className="text-lg font-extrabold text-[#11508f]">PARC INFORMATIQUE CENTRAL</div>
-                        <div className="text-xs text-slate-600">Direction des Systèmes d'Information & Télécommunications</div>
+                {/* Header: Official SRM Emblem Logo + Company Department Title */}
+                <div className="flex justify-between items-start pb-6 border-b border-slate-200 mb-6">
+                    <div className="flex items-center gap-4">
+                        <ApplicationLogo className="h-16 w-auto" />
                     </div>
                     <div className="text-right">
-                        <div className="text-sm font-mono font-bold text-slate-900 bg-slate-100 px-3 py-1.5 rounded border border-slate-300 inline-block">
-                            Réf : {codeAff}
-                        </div>
-                        <div className="text-xs text-slate-500 mt-1">Date d'édition : {formatDate(new Date().toISOString())}</div>
+                        <h2 className="text-sm font-extrabold text-[#11508f]">Société Régionale Multiservices Souss-Massa SA</h2>
+                        <p className="text-xs text-slate-600 mt-0.5 font-medium">Direction Systèmes d'Information & Transformation Digitale</p>
+                        <p className="text-xs text-slate-600 font-medium">Service Infrastructure et Supervision SI</p>
                     </div>
                 </div>
 
-                {/* Title */}
+                {/* Centered Document Title */}
                 <div className="text-center my-6">
-                    <h2 className="text-xl font-bold uppercase tracking-wider text-slate-900 border-y border-slate-300 py-3 bg-slate-50">
-                        Fiche de Prise en Charge de Matériel Informatique
-                    </h2>
-                </div>
-
-                {/* Section 1: Employé */}
-                <div className="mb-8">
-                    <h3 className="text-sm font-bold text-[#11508f] uppercase tracking-wide border-b pb-1 mb-3">
-                        I. Identification du Bénéficiaire
-                    </h3>
-                    <table className="w-full text-xs border border-slate-300 border-collapse">
-                        <tbody>
-                            <tr className="border-b border-slate-300">
-                                <td className="p-2.5 font-bold bg-slate-50 w-1/4 border-r border-slate-300">Nom & Prénom :</td>
-                                <td className="p-2.5 font-medium text-slate-900 w-1/4 border-r border-slate-300">{emp.nom} {emp.prenom}</td>
-                                <td className="p-2.5 font-bold bg-slate-50 w-1/4 border-r border-slate-300">Matricule :</td>
-                                <td className="p-2.5 font-mono font-bold text-slate-900 w-1/4">{emp.matricule}</td>
-                            </tr>
-                            <tr className="border-b border-slate-300">
-                                <td className="p-2.5 font-bold bg-slate-50 border-r border-slate-300">Fonction :</td>
-                                <td className="p-2.5 font-medium text-slate-900 border-r border-slate-300">{emp.fonction || '—'}</td>
-                                <td className="p-2.5 font-bold bg-slate-50 border-r border-slate-300">Service :</td>
-                                <td className="p-2.5 font-medium text-slate-900">{service.nom_service || '—'}</td>
-                            </tr>
-                            <tr className="border-b border-slate-300">
-                                <td className="p-2.5 font-bold bg-slate-50 border-r border-slate-300">Division :</td>
-                                <td className="p-2.5 font-medium text-slate-900 border-r border-slate-300">{division.nom_division || '—'}</td>
-                                <td className="p-2.5 font-bold bg-slate-50 border-r border-slate-300">Département :</td>
-                                <td className="p-2.5 font-medium text-slate-900">{departement.nom_departement || '—'}</td>
-                            </tr>
-                            <tr>
-                                <td className="p-2.5 font-bold bg-slate-50 border-r border-slate-300">Direction :</td>
-                                <td colSpan={3} className="p-2.5 font-medium text-slate-900">{direction.nom_direction || '—'}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Section 2: Matériel */}
-                <div className="mb-8">
-                    <h3 className="text-sm font-bold text-[#11508f] uppercase tracking-wide border-b pb-1 mb-3">
-                        II. Désignation des Équipements Affectés
-                    </h3>
-                    <table className="w-full text-xs border border-slate-300 border-collapse">
-                        <tbody>
-                            <tr className="border-b border-slate-300">
-                                <td className="p-2.5 font-bold bg-slate-50 w-1/4 border-r border-slate-300">Désignation du Matériel :</td>
-                                <td className="p-2.5 font-bold text-slate-900 w-1/4 border-r border-slate-300">{mat.nom}</td>
-                                <td className="p-2.5 font-bold bg-slate-50 w-1/4 border-r border-slate-300">Catégorie :</td>
-                                <td className="p-2.5 font-medium text-slate-900 w-1/4">{mat.categorie?.nom_categorie || '—'}</td>
-                            </tr>
-                            <tr className="border-b border-slate-300">
-                                <td className="p-2.5 font-bold bg-slate-50 border-r border-slate-300">Marque & Modèle :</td>
-                                <td className="p-2.5 font-medium text-slate-900 border-r border-slate-300">{mat.marque} {mat.modele}</td>
-                                <td className="p-2.5 font-bold bg-slate-50 border-r border-slate-300">Date d'Affectation :</td>
-                                <td className="p-2.5 font-bold text-slate-900">{formatDate(affectation.date_affectation)}</td>
-                            </tr>
-                            <tr className="border-b border-slate-300">
-                                <td className="p-2.5 font-bold bg-slate-50 border-r border-slate-300">N° de Série :</td>
-                                <td className="p-2.5 font-mono font-bold text-slate-900 border-r border-slate-300">{mat.numero_serie}</td>
-                                <td className="p-2.5 font-bold bg-slate-50 border-r border-slate-300">N° d'Inventaire :</td>
-                                <td className="p-2.5 font-mono font-bold text-slate-900">{mat.numero_inventaire}</td>
-                            </tr>
-                            {mat.caracteristique && (
-                                <tr>
-                                    <td className="p-2.5 font-bold bg-slate-50 border-r border-slate-300">Spécifications Techniques :</td>
-                                    <td colSpan={3} className="p-2.5 font-mono text-xs text-slate-800">{mat.caracteristique}</td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Section 3: Engagement */}
-                <div className="mb-12 bg-slate-50 p-4 rounded border border-slate-200 text-xs text-slate-700 leading-relaxed">
-                    <h4 className="font-bold text-slate-900 mb-1">Engagement & Responsabilités du Bénéficiaire :</h4>
-                    <p>
-                        Je soussigné(e), <strong className="text-slate-900">{emp.nom} {emp.prenom}</strong>, certifie avoir reçu en parfait état de marche le matériel informatique décrit ci-dessus. Je m'engage à :
+                    <h1 className="text-xl font-extrabold tracking-tight text-slate-500 uppercase font-heading">
+                        FICHE D'AFFECTATION DE MATÉRIEL INFORMATIQUE
+                    </h1>
+                    <p className="text-xs text-slate-400 mt-1.5 font-medium">
+                        Référence : <strong className="text-slate-700">{codeAff}</strong> | Date d'affectation : <strong className="text-slate-700">{formatDate(affectation.date_affectation)}</strong>
                     </p>
-                    <ul className="list-disc ms-5 mt-1 space-y-0.5">
-                        <li>Utiliser cet équipement exclusivement dans le cadre de mes fonctions professionnelles.</li>
-                        <li>Assurer la garde et la conservation matérielle de cet équipement contre le vol et la détérioration.</li>
-                        <li>Restituer le matériel sur demande du Service Informatique ou lors de la fin de mon affectation.</li>
+                </div>
+
+                {/* Section 1: Informations du Bénéficiaire */}
+                <div className="mb-6">
+                    <h2 className="text-xs font-black text-[#11508f] uppercase tracking-wider mb-2 font-heading">
+                        1. INFORMATIONS DU BÉNÉFICIAIRE
+                    </h2>
+                    <div className="p-4 rounded-xl border border-slate-200 border-l-4 border-l-[#11508f] bg-white text-xs">
+                        <div className="grid grid-cols-2 gap-y-2.5 gap-x-6">
+                            <div className="flex">
+                                <span className="w-28 text-slate-600 font-medium shrink-0">Nom & Prénom :</span>
+                                <span className="font-extrabold text-slate-900">{emp.nom} {emp.prenom}</span>
+                            </div>
+                            <div className="flex">
+                                <span className="w-24 text-slate-600 font-medium shrink-0">Matricule :</span>
+                                <span className="font-extrabold text-slate-900">{emp.matricule}</span>
+                            </div>
+                            <div className="flex">
+                                <span className="w-28 text-slate-600 font-medium shrink-0">Service :</span>
+                                <span className="font-extrabold text-[#11508f]">{service.nom_service || '—'}</span>
+                            </div>
+                            <div className="flex">
+                                <span className="w-24 text-slate-600 font-medium shrink-0">Fonction :</span>
+                                <span className="font-extrabold text-slate-900">{emp.fonction || '—'}</span>
+                            </div>
+                            <div className="flex col-span-2">
+                                <span className="w-28 text-slate-600 font-medium shrink-0">Division / Dept :</span>
+                                <span className="font-extrabold text-slate-900">
+                                    {division.nom_division ? `${division.nom_division} — ` : ''}{service.nom_service || '—'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Section 2: Désignation du Matériel Affecté */}
+                <div className="mb-6">
+                    <h2 className="text-xs font-black text-[#11508f] uppercase tracking-wider mb-2 font-heading">
+                        2. DÉSIGNATION DU MATÉRIEL AFFECTÉ
+                    </h2>
+                    <table className="w-full text-xs border border-[#11508f] border-collapse text-center">
+                        <thead>
+                            <tr className="bg-white text-slate-400 font-bold uppercase text-[10px] tracking-wider border-b border-[#11508f]">
+                                <th className="p-2.5 border-r border-[#11508f] text-left">DÉSIGNATION</th>
+                                <th className="p-2.5 border-r border-[#11508f]">CATÉGORIE</th>
+                                <th className="p-2.5 border-r border-[#11508f]">MARQUE</th>
+                                <th className="p-2.5 border-r border-[#11508f]">MODÈLE</th>
+                                <th className="p-2.5 border-r border-[#11508f]">N° DE SÉRIE</th>
+                                <th className="p-2.5">N° D'INVENTAIRE</th>
+                            </tr>
+                        </thead>
+                        <tbody className="text-slate-800 font-medium">
+                            <tr className="border-b border-[#cbd5e1]">
+                                <td className="p-2.5 border-r border-[#cbd5e1] text-left font-bold text-slate-900">{mat.nom}</td>
+                                <td className="p-2.5 border-r border-[#cbd5e1]">{mat.categorie?.nom_categorie || '—'}</td>
+                                <td className="p-2.5 border-r border-[#cbd5e1]">{mat.marque}</td>
+                                <td className="p-2.5 border-r border-[#cbd5e1]">{mat.modele}</td>
+                                <td className="p-2.5 border-r border-[#cbd5e1] font-mono">{mat.numero_serie}</td>
+                                <td className="p-2.5 font-mono">{mat.numero_inventaire}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Section 3: Engagements du Bénéficiaire */}
+                <div className="mb-6 p-4 rounded-xl border border-emerald-300 border-l-4 border-l-[#57b24a] bg-emerald-50/50 text-xs text-slate-700">
+                    <h4 className="font-extrabold text-emerald-800 uppercase tracking-wider mb-2 font-heading">
+                        ENGAGEMENTS DU BÉNÉFICIAIRE & CONDITIONS D'UTILISATION :
+                    </h4>
+                    <ul className="space-y-1.5 list-disc ms-4 text-emerald-950 font-medium">
+                        <li>Le bénéficiaire s'engage à utiliser ce matériel exclusivement dans le cadre de ses activités professionnelles.</li>
+                        <li>Il est responsable de la bonne conservation, de la sécurité et du soin apporté au matériel confié.</li>
+                        <li>Toute anomalie, panne, perte ou vol doit être immédiatement signalé à la DSITD.</li>
+                        <li>En cas de changement de service, de poste ou de cessation de fonction, le matériel doit être restitué sans délai à la DSITD.</li>
                     </ul>
                 </div>
 
-                {/* Section 4: Signatures */}
-                <div className="grid grid-cols-2 gap-8 pt-4 border-t border-slate-300">
-                    <div className="text-center p-4 border border-slate-200 rounded min-h-[140px] flex flex-col justify-between">
-                        <div>
-                            <div className="font-bold text-xs uppercase text-slate-800">Visa & Signature du Bénéficiaire</div>
-                            <div className="text-[10px] text-slate-500 italic">(Précédé de la mention "Lu et approuvé")</div>
+                {/* Section 4: Émargement & Validation */}
+                <div className="mb-6">
+                    <h2 className="text-xs font-black text-[#11508f] uppercase tracking-wider mb-2 font-heading">
+                        3. ÉMARGEMENT & VALIDATION
+                    </h2>
+                    <div className="grid grid-cols-3 gap-4">
+                        
+                        {/* Card 1 */}
+                        <div className="p-4 rounded-xl border border-slate-300 border-t-4 border-t-[#11508f] bg-white min-h-[140px] flex flex-col justify-between text-xs">
+                            <div>
+                                <div className="font-extrabold uppercase text-[#11508f] font-heading mb-2">LE BÉNÉFICIAIRE</div>
+                                <div className="font-bold text-slate-800">Nom & Prénom : <span className="font-normal">{emp.nom} {emp.prenom}</span></div>
+                                <div className="font-bold text-slate-800 mt-1">Date :</div>
+                            </div>
+                            <div className="pt-2 border-t border-dashed border-slate-200 text-right text-[10px] italic text-slate-400">
+                                Signature du bénéficiaire
+                            </div>
                         </div>
-                        <div className="text-xs font-semibold text-slate-400 border-t border-dashed border-slate-300 pt-2">
-                            {emp.nom} {emp.prenom}
-                        </div>
-                    </div>
 
-                    <div className="text-center p-4 border border-slate-200 rounded min-h-[140px] flex flex-col justify-between">
-                        <div>
-                            <div className="font-bold text-xs uppercase text-slate-800">Pour la Direction SI & Télécoms</div>
-                            <div className="text-[10px] text-slate-500 italic">(Cachet et Signature du Responsable)</div>
+                        {/* Card 2 */}
+                        <div className="p-4 rounded-xl border border-slate-300 border-t-4 border-t-[#11508f] bg-white min-h-[140px] flex flex-col justify-between text-xs">
+                            <div>
+                                <div className="font-extrabold uppercase text-[#11508f] font-heading mb-2">RESPONSABLE HIÉRARCHIQUE</div>
+                                <div className="font-bold text-slate-800">Nom & Prénom :</div>
+                                <div className="font-bold text-slate-800 mt-1">Date :</div>
+                            </div>
+                            <div className="pt-2 border-t border-dashed border-slate-200 text-right text-[10px] italic text-slate-400">
+                                Signature & Visa
+                            </div>
                         </div>
-                        <div className="text-xs font-semibold text-slate-400 border-t border-dashed border-slate-300 pt-2">
-                            Service Parc Informatique
+
+                        {/* Card 3 */}
+                        <div className="p-4 rounded-xl border border-slate-300 border-t-4 border-t-[#11508f] bg-white min-h-[140px] flex flex-col justify-between text-xs">
+                            <div>
+                                <div className="font-extrabold uppercase text-[#11508f] font-heading mb-2">DIRECTION DSITD</div>
+                                <div className="font-bold text-slate-800">Nom & Prénom :</div>
+                                <div className="font-bold text-slate-800 mt-1">Date :</div>
+                            </div>
+                            <div className="pt-2 border-t border-dashed border-slate-200 text-right text-[10px] italic text-slate-400">
+                                Signature & Cachet
+                            </div>
                         </div>
+
                     </div>
                 </div>
 
-                {/* Footer */}
-                <div className="mt-12 text-center text-[10px] text-slate-400 border-t pt-3">
-                    Fiche générée automatiquement par la plateforme Gestion du Parc Informatique • Document Administratif Confidentiel
-                </div>
             </div>
         </div>
     );

@@ -13,7 +13,7 @@ export default function Welcome({ auth }) {
 
     return (
         <>
-            <Head title="Parc Informatique — Système de Gestion Executive" />
+            <Head title={`Parc Informatique — ${t('system_subtitle')}`} />
 
             <div className="min-h-screen bg-slate-50 dark:bg-[#0b0f19] text-slate-900 dark:text-slate-100 flex flex-col font-sans selection:bg-[#11508f] selection:text-white relative overflow-hidden transition-colors duration-300">
                 
@@ -32,14 +32,14 @@ export default function Welcome({ auth }) {
                             <ApplicationLogo className="h-11 w-auto transition-transform group-hover:scale-105" />
                             <div className="flex flex-col">
                                 <span className="font-black text-lg tracking-tight text-slate-900 dark:text-white group-hover:text-[#11508f] transition font-heading">
-                                    PARC INFORMATIQUE
+                                    {t('system_title')}
                                 </span>
                                 <div className="flex items-center gap-1.5 -mt-0.5">
                                     <span className="h-2 w-2 rounded-full bg-[#11508f] shadow-sm"></span>
                                     <span className="h-2 w-2 rounded-full bg-[#57b24a] shadow-sm"></span>
                                     <span className="h-2 w-2 rounded-full bg-[#fab61e] shadow-sm"></span>
                                     <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ms-1">
-                                        GESTION EXECUTIVE
+                                        {t('system_subtitle')}
                                     </span>
                                 </div>
                             </div>
@@ -73,14 +73,14 @@ export default function Welcome({ auth }) {
                                     href={route('dashboard')}
                                     className="btn-zellij px-5 py-2.5 rounded-xl font-extrabold text-xs"
                                 >
-                                    Espace de Travail →
+                                    {t('workspace_access')}
                                 </Link>
                             ) : (
                                 <Link
                                     href={route('login')}
                                     className="btn-zellij px-6 py-2.5 rounded-xl font-extrabold text-xs"
                                 >
-                                    Se Connecter →
+                                    {t('login_access')}
                                 </Link>
                             )}
                         </div>
@@ -94,16 +94,16 @@ export default function Welcome({ auth }) {
                         {/* Status Badge */}
                         <div className="inline-flex items-center gap-2 bg-blue-50 dark:bg-blue-950/60 border border-[#11508f]/20 px-4 py-1.5 rounded-full text-xs font-extrabold text-[#11508f] dark:text-blue-300 mb-6 shadow-sm">
                             <span className="h-2.5 w-2.5 rounded-full bg-[#57b24a] animate-pulse"></span>
-                            Système Opérationnel & Conforme v2.0
+                            {t('hero_badge')}
                         </div>
 
                         {/* Main Title */}
                         <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-slate-900 dark:text-white max-w-4xl leading-[1.15] font-heading">
-                            Gestion Executive du <span className="brand-gradient-text">Parc Informatique</span>
+                            {t('hero_title_1')} <span className="brand-gradient-text">{t('hero_title_2')}</span>
                         </h1>
 
                         <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 mt-6 max-w-2xl font-medium leading-relaxed">
-                            Traçabilité intégrale des équipements, gestion des affectations par collaborateur, alertes de renouvellement et journal d'audit sécurisé.
+                            {t('hero_desc')}
                         </p>
 
                         {/* CTA Button Group with Zellij Pattern */}
@@ -113,17 +113,15 @@ export default function Welcome({ auth }) {
                                     href={route('dashboard')}
                                     className="w-full sm:w-auto btn-zellij px-8 py-4 rounded-2xl font-extrabold text-sm shadow-xl"
                                 >
-                                    Accéder au Tableau de Bord →
+                                    {t('go_to_dashboard')}
                                 </Link>
                             ) : (
-                                <>
-                                    <Link
-                                        href={route('login')}
-                                        className="w-full sm:w-auto btn-zellij px-8 py-4 rounded-2xl font-extrabold text-sm shadow-xl"
-                                    >
-                                        Connexion à l'Espace Sécurisé →
-                                    </Link>
-                                </>
+                                <Link
+                                    href={route('login')}
+                                    className="w-full sm:w-auto btn-zellij px-8 py-4 rounded-2xl font-extrabold text-sm shadow-xl"
+                                >
+                                    {t('login_access')}
+                                </Link>
                             )}
                         </div>
 
@@ -135,8 +133,8 @@ export default function Welcome({ auth }) {
                                 <div className="flex items-center gap-3">
                                     <ApplicationLogo className="h-8 w-auto" />
                                     <div className="text-left">
-                                        <div className="text-sm font-extrabold text-slate-900 dark:text-white">Aperçu Executive Live</div>
-                                        <div className="text-[10px] font-bold text-slate-400">Dernières données du parc en temps réel</div>
+                                        <div className="text-sm font-extrabold text-slate-900 dark:text-white">{t('live_preview_title')}</div>
+                                        <div className="text-[10px] font-bold text-slate-400">{t('live_preview_desc')}</div>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-1.5">
@@ -153,36 +151,36 @@ export default function Welcome({ auth }) {
                                 <div className="p-5 rounded-2xl bg-gradient-to-br from-[#0d3d6e] to-[#11508f] text-white shadow-lg shadow-[#11508f]/20">
                                     <div className="flex justify-between items-start">
                                         <div>
-                                            <div className="text-xs font-extrabold text-blue-200 uppercase tracking-wider">Inventaire Matériel</div>
-                                            <div className="text-3xl font-black mt-1 font-heading">Total Équipements</div>
+                                            <div className="text-xs font-extrabold text-blue-200 uppercase tracking-wider">{t('stat_total_title')}</div>
+                                            <div className="text-3xl font-black mt-1 font-heading">{t('stat_total_sub')}</div>
                                         </div>
                                         <div className="text-2xl p-2 bg-white/10 rounded-xl">💻</div>
                                     </div>
-                                    <div className="mt-3 text-xs font-semibold text-blue-100">Traçabilité par S/N et Code Inventaire</div>
+                                    <div className="mt-3 text-xs font-semibold text-blue-100">{t('stat_total_desc')}</div>
                                 </div>
 
                                 {/* Card 2: Green */}
                                 <div className="p-5 rounded-2xl bg-gradient-to-br from-[#3f8835] to-[#57b24a] text-white shadow-lg shadow-[#57b24a]/20">
                                     <div className="flex justify-between items-start">
                                         <div>
-                                            <div className="text-xs font-extrabold text-green-100 uppercase tracking-wider">Affectations Actives</div>
-                                            <div className="text-3xl font-black mt-1 font-heading">Prise en Charge</div>
+                                            <div className="text-xs font-extrabold text-green-100 uppercase tracking-wider">{t('stat_affectations_title')}</div>
+                                            <div className="text-3xl font-black mt-1 font-heading">{t('stat_affectations_sub')}</div>
                                         </div>
                                         <div className="text-2xl p-2 bg-white/10 rounded-xl">📋</div>
                                     </div>
-                                    <div className="mt-3 text-xs font-semibold text-green-100">Génération de fiches A4 imprimables</div>
+                                    <div className="mt-3 text-xs font-semibold text-green-100">{t('stat_affectations_desc')}</div>
                                 </div>
 
                                 {/* Card 3: Orange */}
                                 <div className="p-5 rounded-2xl bg-gradient-to-br from-[#d4960e] to-[#fab61e] text-slate-950 shadow-lg shadow-[#fab61e]/20">
                                     <div className="flex justify-between items-start">
                                         <div>
-                                            <div className="text-xs font-extrabold text-amber-950/80 uppercase tracking-wider">Stock & Sécurité</div>
-                                            <div className="text-3xl font-black mt-1 font-heading">Stock Disponible</div>
+                                            <div className="text-xs font-extrabold text-amber-950/80 uppercase tracking-wider">{t('stat_stock_title')}</div>
+                                            <div className="text-3xl font-black mt-1 font-heading">{t('stat_stock_sub')}</div>
                                         </div>
                                         <div className="text-2xl p-2 bg-black/10 rounded-xl">🛡️</div>
                                     </div>
-                                    <div className="mt-3 text-xs font-bold text-slate-950/80">Audit continu et contrôle des rôles</div>
+                                    <div className="mt-3 text-xs font-bold text-slate-950/80">{t('stat_stock_desc')}</div>
                                 </div>
                             </div>
                         </div>
@@ -197,9 +195,9 @@ export default function Welcome({ auth }) {
                                 <div className="h-14 w-14 rounded-2xl bg-blue-50 dark:bg-blue-950 text-[#11508f] dark:text-blue-400 flex items-center justify-center text-2xl font-bold mb-6 group-hover:scale-110 transition-transform shadow-sm">
                                     🏛️
                                 </div>
-                                <h3 className="text-xl font-extrabold text-slate-900 dark:text-white mb-2 font-heading">Structure Organisationnelle</h3>
+                                <h3 className="text-xl font-extrabold text-slate-900 dark:text-white mb-2 font-heading">{t('feature_structure_title')}</h3>
                                 <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
-                                    Découpage hiérarchique complet par Directions, Départements, Divisions et Services avec rattachement direct des collaborateurs.
+                                    {t('feature_structure_desc')}
                                 </p>
                             </div>
 
@@ -207,9 +205,9 @@ export default function Welcome({ auth }) {
                                 <div className="h-14 w-14 rounded-2xl bg-emerald-50 dark:bg-emerald-950 text-[#57b24a] flex items-center justify-center text-2xl font-bold mb-6 group-hover:scale-110 transition-transform shadow-sm">
                                     💻
                                 </div>
-                                <h3 className="text-xl font-extrabold text-slate-900 dark:text-white mb-2 font-heading">Parc & Affectations</h3>
+                                <h3 className="text-xl font-extrabold text-slate-900 dark:text-white mb-2 font-heading">{t('feature_parc_title')}</h3>
                                 <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
-                                    Attributions d’ordinateurs, écrans et périphériques avec gestion de restitutions, clôtures et fiches de prise en charge A4.
+                                    {t('feature_parc_desc')}
                                 </p>
                             </div>
 
@@ -217,9 +215,9 @@ export default function Welcome({ auth }) {
                                 <div className="h-14 w-14 rounded-2xl bg-amber-50 dark:bg-amber-950 text-[#fab61e] flex items-center justify-center text-2xl font-bold mb-6 group-hover:scale-110 transition-transform shadow-sm">
                                     🛡️
                                 </div>
-                                <h3 className="text-xl font-extrabold text-slate-900 dark:text-white mb-2 font-heading">Sécurité & Journal d'Audit</h3>
+                                <h3 className="text-xl font-extrabold text-slate-900 dark:text-white mb-2 font-heading">{t('feature_security_title')}</h3>
                                 <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
-                                    Registre infalsifiable traçant l'ensemble des créations, modifications et clôtures d'affectations avec horodatage strict.
+                                    {t('feature_security_desc')}
                                 </p>
                             </div>
                         </div>
@@ -230,11 +228,11 @@ export default function Welcome({ auth }) {
                 <footer className="border-t border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-[#0b0f19] py-8 text-xs text-slate-500">
                     <div className="mx-auto max-w-7xl px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
                         <div className="flex items-center gap-2">
-                            <span className="font-extrabold text-slate-900 dark:text-white font-heading">PARC INFORMATIQUE</span>
-                            <span>— Système de Gestion Interne</span>
+                            <span className="font-extrabold text-slate-900 dark:text-white font-heading">{t('system_title')}</span>
+                            <span>{t('footer_internal')}</span>
                         </div>
                         <div>
-                            © {new Date().getFullYear()} Tous droits réservés.
+                            © {new Date().getFullYear()} {t('footer_rights')}
                         </div>
                     </div>
                 </footer>
