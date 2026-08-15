@@ -7,9 +7,9 @@ export default function Index({ directions }) {
     const { auth = {}, errors: pageErrors } = usePage().props;
     const { permissions = [], isAdmin = false } = auth;
 
-    const canCreate = isAdmin || permissions.includes('gerer_structure') || permissions.includes('modifier_structure');
-    const canEdit = isAdmin || permissions.includes('gerer_structure') || permissions.includes('modifier_structure');
-    const canDelete = isAdmin || permissions.includes('gerer_structure') || permissions.includes('supprimer_structure');
+    const canCreate = isAdmin || permissions.includes('creer_direction') || permissions.includes('gerer_directions') || permissions.includes('gerer_structure') || permissions.includes('modifier_structure');
+    const canEdit = isAdmin || permissions.includes('modifier_direction') || permissions.includes('gerer_directions') || permissions.includes('gerer_structure') || permissions.includes('modifier_structure');
+    const canDelete = isAdmin || permissions.includes('supprimer_direction') || permissions.includes('gerer_directions') || permissions.includes('gerer_structure') || permissions.includes('supprimer_structure');
     const hasAnyAction = canEdit || canDelete;
 
     const [editingDirection, setEditingDirection] = useState(null);

@@ -100,7 +100,16 @@ export default function Index({ roles, permissions = [] }) {
             case 'Employés':
                 return 'bg-purple-50 text-purple-700 border-purple-200';
             case 'Structure':
+            case 'Structure (Global)':
                 return 'bg-amber-50 text-amber-700 border-amber-200';
+            case 'Directions':
+                return 'bg-indigo-50 text-indigo-700 border-indigo-200';
+            case 'Départements':
+                return 'bg-sky-50 text-sky-700 border-sky-200';
+            case 'Divisions':
+                return 'bg-teal-50 text-teal-700 border-teal-200';
+            case 'Services':
+                return 'bg-orange-50 text-orange-700 border-orange-200';
             default:
                 return 'bg-slate-50 text-slate-700 border-slate-200';
         }

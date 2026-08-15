@@ -60,11 +60,39 @@ class DatabaseSeeder extends Seeder
             ['nom_permission' => 'modifier_employe', 'module' => 'Employés', 'libelle' => 'Modifier un employé', 'description_permission' => 'Éditer le profil et l\'affectation de service'],
             ['nom_permission' => 'supprimer_employe', 'module' => 'Employés', 'libelle' => 'Supprimer un employé', 'description_permission' => 'Retirer un employé de la base'],
 
-            // 🏛️ Structure
-            ['nom_permission' => 'gerer_structure', 'module' => 'Structure', 'libelle' => 'Gestion Complète de la Structure', 'description_permission' => 'Tout autoriser sur la structure administrative'],
-            ['nom_permission' => 'voir_structure', 'module' => 'Structure', 'libelle' => 'Consulter l\'organigramme', 'description_permission' => 'Afficher Directions, Départements, Divisions et Services'],
-            ['nom_permission' => 'modifier_structure', 'module' => 'Structure', 'libelle' => 'Créer & Modifier la structure', 'description_permission' => 'Gérer les entités administratives'],
-            ['nom_permission' => 'supprimer_structure', 'module' => 'Structure', 'libelle' => 'Supprimer des entités', 'description_permission' => 'Supprimer des éléments de l\'organigramme'],
+            // 🏛️ Structure - Global & Per-Layer
+            ['nom_permission' => 'gerer_structure', 'module' => 'Structure (Global)', 'libelle' => 'Gestion Complète de la Structure', 'description_permission' => 'Tout autoriser sur toutes les entités de la structure administrative'],
+            ['nom_permission' => 'voir_structure', 'module' => 'Structure (Global)', 'libelle' => 'Consulter l\'organigramme', 'description_permission' => 'Afficher Directions, Départements, Divisions et Services'],
+            ['nom_permission' => 'modifier_structure', 'module' => 'Structure (Global)', 'libelle' => 'Créer & Modifier la structure', 'description_permission' => 'Gérer toutes les entités administratives'],
+            ['nom_permission' => 'supprimer_structure', 'module' => 'Structure (Global)', 'libelle' => 'Supprimer des entités', 'description_permission' => 'Supprimer n\'importe quel élément de l\'organigramme'],
+
+            // 🏢 Layer: Directions
+            ['nom_permission' => 'gerer_directions', 'module' => 'Directions', 'libelle' => 'Gestion Complète des Directions', 'description_permission' => 'Tout autoriser sur les directions'],
+            ['nom_permission' => 'voir_directions', 'module' => 'Directions', 'libelle' => 'Consulter les directions', 'description_permission' => 'Afficher la liste des directions'],
+            ['nom_permission' => 'creer_direction', 'module' => 'Directions', 'libelle' => 'Ajouter une direction', 'description_permission' => 'Créer de nouvelles directions'],
+            ['nom_permission' => 'modifier_direction', 'module' => 'Directions', 'libelle' => 'Modifier une direction', 'description_permission' => 'Éditer les noms de directions'],
+            ['nom_permission' => 'supprimer_direction', 'module' => 'Directions', 'libelle' => 'Supprimer une direction', 'description_permission' => 'Supprimer des directions'],
+
+            // 🏛️ Layer: Départements
+            ['nom_permission' => 'gerer_departements', 'module' => 'Départements', 'libelle' => 'Gestion Complète des Départements', 'description_permission' => 'Tout autoriser sur les départements'],
+            ['nom_permission' => 'voir_departements', 'module' => 'Départements', 'libelle' => 'Consulter les départements', 'description_permission' => 'Afficher la liste des départements'],
+            ['nom_permission' => 'creer_departement', 'module' => 'Départements', 'libelle' => 'Ajouter un département', 'description_permission' => 'Créer de nouveaux départements'],
+            ['nom_permission' => 'modifier_departement', 'module' => 'Départements', 'libelle' => 'Modifier un département', 'description_permission' => 'Éditer les départements'],
+            ['nom_permission' => 'supprimer_departement', 'module' => 'Départements', 'libelle' => 'Supprimer un département', 'description_permission' => 'Supprimer des départements'],
+
+            // 🏬 Layer: Divisions
+            ['nom_permission' => 'gerer_divisions', 'module' => 'Divisions', 'libelle' => 'Gestion Complète des Divisions', 'description_permission' => 'Tout autoriser sur les divisions'],
+            ['nom_permission' => 'voir_divisions', 'module' => 'Divisions', 'libelle' => 'Consulter les divisions', 'description_permission' => 'Afficher la liste des divisions'],
+            ['nom_permission' => 'creer_division', 'module' => 'Divisions', 'libelle' => 'Ajouter une division', 'description_permission' => 'Créer de nouvelles divisions'],
+            ['nom_permission' => 'modifier_division', 'module' => 'Divisions', 'libelle' => 'Modifier une division', 'description_permission' => 'Éditer les divisions'],
+            ['nom_permission' => 'supprimer_division', 'module' => 'Divisions', 'libelle' => 'Supprimer une division', 'description_permission' => 'Supprimer des divisions'],
+
+            // 🛠️ Layer: Services
+            ['nom_permission' => 'gerer_services', 'module' => 'Services', 'libelle' => 'Gestion Complète des Services', 'description_permission' => 'Tout autoriser sur les services'],
+            ['nom_permission' => 'voir_services', 'module' => 'Services', 'libelle' => 'Consulter les services', 'description_permission' => 'Afficher la liste des services'],
+            ['nom_permission' => 'creer_service', 'module' => 'Services', 'libelle' => 'Ajouter un service', 'description_permission' => 'Créer de nouveaux services'],
+            ['nom_permission' => 'modifier_service', 'module' => 'Services', 'libelle' => 'Modifier un service', 'description_permission' => 'Éditer les services'],
+            ['nom_permission' => 'supprimer_service', 'module' => 'Services', 'libelle' => 'Supprimer un service', 'description_permission' => 'Supprimer des services'],
 
             // 📜 Journal d'Audit
             ['nom_permission' => 'voir_audit_logs', 'module' => 'Journal d\'Audit', 'libelle' => 'Consulter le journal d\'audit', 'description_permission' => 'Afficher l\'historique détaillé des actions système'],

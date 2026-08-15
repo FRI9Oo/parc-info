@@ -67,13 +67,48 @@ class User extends Authenticatable
             'creer_employe' => 'gerer_employes',
             'modifier_employe' => 'gerer_employes',
             'supprimer_employe' => 'gerer_employes',
+
+            // Generic Structure
             'voir_structure' => 'gerer_structure',
             'modifier_structure' => 'gerer_structure',
             'supprimer_structure' => 'gerer_structure',
+
+            // Per-Layer Structure: Directions
+            'voir_directions' => ['gerer_directions', 'voir_structure', 'gerer_structure'],
+            'creer_direction' => ['gerer_directions', 'modifier_structure', 'gerer_structure'],
+            'modifier_direction' => ['gerer_directions', 'modifier_structure', 'gerer_structure'],
+            'supprimer_direction' => ['gerer_directions', 'supprimer_structure', 'gerer_structure'],
+            'gerer_directions' => ['gerer_structure'],
+
+            // Per-Layer Structure: Départements
+            'voir_departements' => ['gerer_departements', 'voir_structure', 'gerer_structure'],
+            'creer_departement' => ['gerer_departements', 'modifier_structure', 'gerer_structure'],
+            'modifier_departement' => ['gerer_departements', 'modifier_structure', 'gerer_structure'],
+            'supprimer_departement' => ['gerer_departements', 'supprimer_structure', 'gerer_structure'],
+            'gerer_departements' => ['gerer_structure'],
+
+            // Per-Layer Structure: Divisions
+            'voir_divisions' => ['gerer_divisions', 'voir_structure', 'gerer_structure'],
+            'creer_division' => ['gerer_divisions', 'modifier_structure', 'gerer_structure'],
+            'modifier_division' => ['gerer_divisions', 'modifier_structure', 'gerer_structure'],
+            'supprimer_division' => ['gerer_divisions', 'supprimer_structure', 'gerer_structure'],
+            'gerer_divisions' => ['gerer_structure'],
+
+            // Per-Layer Structure: Services
+            'voir_services' => ['gerer_services', 'voir_structure', 'gerer_structure'],
+            'creer_service' => ['gerer_services', 'modifier_structure', 'gerer_structure'],
+            'modifier_service' => ['gerer_services', 'modifier_structure', 'gerer_structure'],
+            'supprimer_service' => ['gerer_services', 'supprimer_structure', 'gerer_structure'],
+            'gerer_services' => ['gerer_structure'],
         ];
 
         if (isset($masterMapping[$permissionName])) {
-            return $this->role->permissions->contains('nom_permission', $masterMapping[$permissionName]);
+            $parents = (array) $masterMapping[$permissionName];
+            foreach ($parents as $parentPerm) {
+                if ($this->role->permissions->contains('nom_permission', $parentPerm)) {
+                    return true;
+                }
+            }
         }
 
         return false;

@@ -29,13 +29,25 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+
+        $userPermissions = [];
+        if ($user) {
+            if ($user->hasRole('Administrateur')) {
+                $userPermissions = \App\Models\Permission::pluck('nom_permission')->toArray();
+            } elseif ($user->role) {
+                $allPerms = \App\Models\Permission::pluck('nom_permission');
+                $userPermissions = $allPerms->filter(fn ($p) => $user->hasPermission($p))->values()->toArray();
+            }
+        }
+
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $request->user(),
-                'role' => $request->user()?->role?->nom_role,
-                'permissions' => $request->user()?->role?->permissions->pluck('nom_permission')->toArray() ?? [],
-                'isAdmin' => $request->user()?->hasRole('Administrateur') ?? false,
+                'user' => $user,
+                'role' => $user?->role?->nom_role,
+                'permissions' => $userPermissions,
+                'isAdmin' => $user?->hasRole('Administrateur') ?? false,
             ],
         ];
     }

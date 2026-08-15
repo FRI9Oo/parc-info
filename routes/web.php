@@ -36,45 +36,45 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // Échelle administrative (Structure)
-    Route::get('/directions', [DirectionController::class, 'index'])->middleware('permission:voir_structure,gerer_structure')->name('directions.index');
-    Route::post('/directions', [DirectionController::class, 'store'])->middleware('permission:modifier_structure,gerer_structure')->name('directions.store');
-    Route::put('/directions/{direction}', [DirectionController::class, 'update'])->middleware('permission:modifier_structure,gerer_structure')->name('directions.update');
-    Route::delete('/directions/{direction}', [DirectionController::class, 'destroy'])->middleware('permission:supprimer_structure,gerer_structure')->name('directions.destroy');
+    Route::get('/directions', [DirectionController::class, 'index'])->middleware('permission:voir_directions,gerer_directions,creer_direction,modifier_direction,supprimer_direction,voir_structure,gerer_structure,modifier_structure,supprimer_structure')->name('directions.index');
+    Route::post('/directions', [DirectionController::class, 'store'])->middleware('permission:creer_direction,gerer_directions,modifier_structure,gerer_structure')->name('directions.store');
+    Route::put('/directions/{direction}', [DirectionController::class, 'update'])->middleware('permission:modifier_direction,gerer_directions,modifier_structure,gerer_structure')->name('directions.update');
+    Route::delete('/directions/{direction}', [DirectionController::class, 'destroy'])->middleware('permission:supprimer_direction,gerer_directions,supprimer_structure,gerer_structure')->name('directions.destroy');
 
-    Route::get('/departements', [DepartementController::class, 'index'])->middleware('permission:voir_structure,gerer_structure')->name('departements.index');
-    Route::post('/departements', [DepartementController::class, 'store'])->middleware('permission:modifier_structure,gerer_structure')->name('departements.store');
-    Route::put('/departements/{departement}', [DepartementController::class, 'update'])->middleware('permission:modifier_structure,gerer_structure')->name('departements.update');
-    Route::delete('/departements/{departement}', [DepartementController::class, 'destroy'])->middleware('permission:supprimer_structure,gerer_structure')->name('departements.destroy');
+    Route::get('/departements', [DepartementController::class, 'index'])->middleware('permission:voir_departements,gerer_departements,creer_departement,modifier_departement,supprimer_departement,voir_structure,gerer_structure,modifier_structure,supprimer_structure')->name('departements.index');
+    Route::post('/departements', [DepartementController::class, 'store'])->middleware('permission:creer_departement,gerer_departements,modifier_structure,gerer_structure')->name('departements.store');
+    Route::put('/departements/{departement}', [DepartementController::class, 'update'])->middleware('permission:modifier_departement,gerer_departements,modifier_structure,gerer_structure')->name('departements.update');
+    Route::delete('/departements/{departement}', [DepartementController::class, 'destroy'])->middleware('permission:supprimer_departement,gerer_departements,supprimer_structure,gerer_structure')->name('departements.destroy');
 
-    Route::get('/divisions', [DivisionController::class, 'index'])->middleware('permission:voir_structure,gerer_structure')->name('divisions.index');
-    Route::post('/divisions', [DivisionController::class, 'store'])->middleware('permission:modifier_structure,gerer_structure')->name('divisions.store');
-    Route::put('/divisions/{division}', [DivisionController::class, 'update'])->middleware('permission:modifier_structure,gerer_structure')->name('divisions.update');
-    Route::delete('/divisions/{division}', [DivisionController::class, 'destroy'])->middleware('permission:supprimer_structure,gerer_structure')->name('divisions.destroy');
+    Route::get('/divisions', [DivisionController::class, 'index'])->middleware('permission:voir_divisions,gerer_divisions,creer_division,modifier_division,supprimer_division,voir_structure,gerer_structure,modifier_structure,supprimer_structure')->name('divisions.index');
+    Route::post('/divisions', [DivisionController::class, 'store'])->middleware('permission:creer_division,gerer_divisions,modifier_structure,gerer_structure')->name('divisions.store');
+    Route::put('/divisions/{division}', [DivisionController::class, 'update'])->middleware('permission:modifier_division,gerer_divisions,modifier_structure,gerer_structure')->name('divisions.update');
+    Route::delete('/divisions/{division}', [DivisionController::class, 'destroy'])->middleware('permission:supprimer_division,gerer_divisions,supprimer_structure,gerer_structure')->name('divisions.destroy');
 
-    Route::get('/services', [ServiceController::class, 'index'])->middleware('permission:voir_structure,gerer_structure')->name('services.index');
-    Route::post('/services', [ServiceController::class, 'store'])->middleware('permission:modifier_structure,gerer_structure')->name('services.store');
-    Route::put('/services/{service}', [ServiceController::class, 'update'])->middleware('permission:modifier_structure,gerer_structure')->name('services.update');
-    Route::delete('/services/{service}', [ServiceController::class, 'destroy'])->middleware('permission:supprimer_structure,gerer_structure')->name('services.destroy');
+    Route::get('/services', [ServiceController::class, 'index'])->middleware('permission:voir_services,gerer_services,creer_service,modifier_service,supprimer_service,voir_structure,gerer_structure,modifier_structure,supprimer_structure')->name('services.index');
+    Route::post('/services', [ServiceController::class, 'store'])->middleware('permission:creer_service,gerer_services,modifier_structure,gerer_structure')->name('services.store');
+    Route::put('/services/{service}', [ServiceController::class, 'update'])->middleware('permission:modifier_service,gerer_services,modifier_structure,gerer_structure')->name('services.update');
+    Route::delete('/services/{service}', [ServiceController::class, 'destroy'])->middleware('permission:supprimer_service,gerer_services,supprimer_structure,gerer_structure')->name('services.destroy');
 
     // Employes
-    Route::get('/employes', [EmployeController::class, 'index'])->middleware('permission:voir_employes,gerer_employes')->name('employes.index');
+    Route::get('/employes', [EmployeController::class, 'index'])->middleware('permission:voir_employes,gerer_employes,creer_employe,modifier_employe,supprimer_employe')->name('employes.index');
     Route::post('/employes', [EmployeController::class, 'store'])->middleware('permission:creer_employe,gerer_employes')->name('employes.store');
     Route::put('/employes/{employe}', [EmployeController::class, 'update'])->middleware('permission:modifier_employe,gerer_employes')->name('employes.update');
     Route::delete('/employes/{employe}', [EmployeController::class, 'destroy'])->middleware('permission:supprimer_employe,gerer_employes')->name('employes.destroy');
 
     // Categories & Materiels
-    Route::get('/categories', [CategorieController::class, 'index'])->middleware('permission:voir_materiels,gerer_materiels')->name('categories.index');
+    Route::get('/categories', [CategorieController::class, 'index'])->middleware('permission:voir_materiels,gerer_materiels,creer_materiel,modifier_materiel,supprimer_materiel')->name('categories.index');
     Route::post('/categories', [CategorieController::class, 'store'])->middleware('permission:creer_materiel,gerer_materiels')->name('categories.store');
     Route::put('/categories/{categorie}', [CategorieController::class, 'update'])->middleware('permission:modifier_materiel,gerer_materiels')->name('categories.update');
     Route::delete('/categories/{categorie}', [CategorieController::class, 'destroy'])->middleware('permission:supprimer_materiel,gerer_materiels')->name('categories.destroy');
 
-    Route::get('/materiels', [MaterielController::class, 'index'])->middleware('permission:voir_materiels,gerer_materiels')->name('materiels.index');
+    Route::get('/materiels', [MaterielController::class, 'index'])->middleware('permission:voir_materiels,gerer_materiels,creer_materiel,modifier_materiel,supprimer_materiel')->name('materiels.index');
     Route::post('/materiels', [MaterielController::class, 'store'])->middleware('permission:creer_materiel,gerer_materiels')->name('materiels.store');
     Route::put('/materiels/{materiel}', [MaterielController::class, 'update'])->middleware('permission:modifier_materiel,gerer_materiels')->name('materiels.update');
     Route::delete('/materiels/{materiel}', [MaterielController::class, 'destroy'])->middleware('permission:supprimer_materiel,gerer_materiels')->name('materiels.destroy');
 
     // Affectations
-    Route::get('/affectations', [AffectationMaterielController::class, 'index'])->middleware('permission:voir_affectations,gerer_affectations')->name('affectations.index');
+    Route::get('/affectations', [AffectationMaterielController::class, 'index'])->middleware('permission:voir_affectations,gerer_affectations,creer_affectation,modifier_affectation,imprimer_affectation')->name('affectations.index');
     Route::post('/affectations', [AffectationMaterielController::class, 'store'])->middleware('permission:creer_affectation,gerer_affectations')->name('affectations.store');
     Route::put('/affectations/{affectation}', [AffectationMaterielController::class, 'update'])->middleware('permission:modifier_affectation,gerer_affectations')->name('affectations.update');
     Route::put('/affectations/{affectation}/cloturer', [AffectationMaterielController::class, 'cloturer'])->middleware('permission:modifier_affectation,gerer_affectations')->name('affectations.cloturer');

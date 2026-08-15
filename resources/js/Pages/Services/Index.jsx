@@ -7,9 +7,9 @@ export default function Index({ services, divisions }) {
     const { auth = {}, errors: pageErrors } = usePage().props;
     const { permissions = [], isAdmin = false } = auth;
 
-    const canCreate = isAdmin || permissions.includes('gerer_structure') || permissions.includes('modifier_structure');
-    const canEdit = isAdmin || permissions.includes('gerer_structure') || permissions.includes('modifier_structure');
-    const canDelete = isAdmin || permissions.includes('gerer_structure') || permissions.includes('supprimer_structure');
+    const canCreate = isAdmin || permissions.includes('creer_service') || permissions.includes('gerer_services') || permissions.includes('gerer_structure') || permissions.includes('modifier_structure');
+    const canEdit = isAdmin || permissions.includes('modifier_service') || permissions.includes('gerer_services') || permissions.includes('gerer_structure') || permissions.includes('modifier_structure');
+    const canDelete = isAdmin || permissions.includes('supprimer_service') || permissions.includes('gerer_services') || permissions.includes('gerer_structure') || permissions.includes('supprimer_structure');
     const hasAnyAction = canEdit || canDelete;
 
     const [editingService, setEditingService] = useState(null);

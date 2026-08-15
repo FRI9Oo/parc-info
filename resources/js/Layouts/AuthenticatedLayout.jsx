@@ -11,6 +11,22 @@ export default function AuthenticatedLayout({ header, children }) {
 
     const hasPerm = (permission) => isAdmin || permissions.includes(permission);
 
+    // Dynamic Module & Action Permission Guards
+    const canSeeStructure = hasPerm('gerer_structure') || hasPerm('voir_structure') || hasPerm('modifier_structure') || hasPerm('supprimer_structure');
+    const canSeeDirections = canSeeStructure || hasPerm('gerer_directions') || hasPerm('voir_directions') || hasPerm('creer_direction') || hasPerm('modifier_direction') || hasPerm('supprimer_direction');
+    const canSeeDepartements = canSeeStructure || hasPerm('gerer_departements') || hasPerm('voir_departements') || hasPerm('creer_departement') || hasPerm('modifier_departement') || hasPerm('supprimer_departement');
+    const canSeeDivisions = canSeeStructure || hasPerm('gerer_divisions') || hasPerm('voir_divisions') || hasPerm('creer_division') || hasPerm('modifier_division') || hasPerm('supprimer_division');
+    const canSeeServices = canSeeStructure || hasPerm('gerer_services') || hasPerm('voir_services') || hasPerm('creer_service') || hasPerm('modifier_service') || hasPerm('supprimer_service');
+
+    const canSeeEmployes = hasPerm('gerer_employes') || hasPerm('voir_employes') || hasPerm('creer_employe') || hasPerm('modifier_employe') || hasPerm('supprimer_employe');
+    const canSeeMateriels = hasPerm('gerer_materiels') || hasPerm('voir_materiels') || hasPerm('creer_materiel') || hasPerm('modifier_materiel') || hasPerm('supprimer_materiel');
+    const canSeeAffectations = hasPerm('gerer_affectations') || hasPerm('voir_affectations') || hasPerm('creer_affectation') || hasPerm('modifier_affectation') || hasPerm('imprimer_affectation');
+    const canSeeAuditLogs = hasPerm('voir_audit_logs');
+
+    const showStructureDropdown = canSeeDirections || canSeeDepartements || canSeeDivisions || canSeeServices || canSeeEmployes;
+    const showParcDropdown = canSeeMateriels || canSeeAffectations;
+    const showAdminDropdown = isAdmin || canSeeAuditLogs;
+
     const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
 
     // Active state helpers
@@ -70,7 +86,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                     <span>{t('dashboard')}</span>
                                 </Link>
 
-                                {(hasPerm('gerer_structure') || hasPerm('voir_structure') || hasPerm('voir_employes')) && (
+                                {showStructureDropdown && (
                                     <Dropdown>
                                         <Dropdown.Trigger>
                                             <button
@@ -87,18 +103,16 @@ export default function AuthenticatedLayout({ header, children }) {
                                             </button>
                                         </Dropdown.Trigger>
                                         <Dropdown.Content align="left" width="48">
-                                            <Dropdown.Link href={route('directions.index')}>{t('directions')}</Dropdown.Link>
-                                            <Dropdown.Link href={route('departements.index')}>{t('departements')}</Dropdown.Link>
-                                            <Dropdown.Link href={route('divisions.index')}>{t('divisions')}</Dropdown.Link>
-                                            <Dropdown.Link href={route('services.index')}>{t('services')}</Dropdown.Link>
-                                            {(hasPerm('gerer_employes') || hasPerm('voir_employes')) && (
-                                                <Dropdown.Link href={route('employes.index')}>{t('employes')}</Dropdown.Link>
-                                            )}
+                                            {canSeeDirections && <Dropdown.Link href={route('directions.index')}>{t('directions')}</Dropdown.Link>}
+                                            {canSeeDepartements && <Dropdown.Link href={route('departements.index')}>{t('departements')}</Dropdown.Link>}
+                                            {canSeeDivisions && <Dropdown.Link href={route('divisions.index')}>{t('divisions')}</Dropdown.Link>}
+                                            {canSeeServices && <Dropdown.Link href={route('services.index')}>{t('services')}</Dropdown.Link>}
+                                            {canSeeEmployes && <Dropdown.Link href={route('employes.index')}>{t('employes')}</Dropdown.Link>}
                                         </Dropdown.Content>
                                     </Dropdown>
                                 )}
 
-                                {(hasPerm('gerer_materiels') || hasPerm('voir_materiels') || hasPerm('voir_affectations')) && (
+                                {showParcDropdown && (
                                     <Dropdown>
                                         <Dropdown.Trigger>
                                             <button
@@ -115,16 +129,20 @@ export default function AuthenticatedLayout({ header, children }) {
                                             </button>
                                         </Dropdown.Trigger>
                                         <Dropdown.Content align="left" width="48">
-                                            <Dropdown.Link href={route('materiels.index')}>{t('materiels')}</Dropdown.Link>
-                                            <Dropdown.Link href={route('categories.index')}>{t('categories')}</Dropdown.Link>
-                                            {(hasPerm('gerer_affectations') || hasPerm('voir_affectations')) && (
+                                            {canSeeMateriels && (
+                                                <>
+                                                    <Dropdown.Link href={route('materiels.index')}>{t('materiels')}</Dropdown.Link>
+                                                    <Dropdown.Link href={route('categories.index')}>{t('categories')}</Dropdown.Link>
+                                                </>
+                                            )}
+                                            {canSeeAffectations && (
                                                 <Dropdown.Link href={route('affectations.index')}>{t('affectations')}</Dropdown.Link>
                                             )}
                                         </Dropdown.Content>
                                     </Dropdown>
                                 )}
 
-                                {(hasPerm('voir_audit_logs') || isAdmin) && (
+                                {showAdminDropdown && (
                                     <Dropdown>
                                         <Dropdown.Trigger>
                                             <button
@@ -141,7 +159,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                             </button>
                                         </Dropdown.Trigger>
                                         <Dropdown.Content align="left" width="48">
-                                            {hasPerm('voir_audit_logs') && (
+                                            {canSeeAuditLogs && (
                                                 <Dropdown.Link href={route('audit-logs.index')}>{t('journal_audit')}</Dropdown.Link>
                                             )}
                                             {isAdmin && (
@@ -255,30 +273,36 @@ export default function AuthenticatedLayout({ header, children }) {
                             📊 {t('dashboard')}
                         </ResponsiveNavLink>
 
-                        {(hasPerm('gerer_structure') || hasPerm('voir_structure')) && (
+                        {showStructureDropdown && (
                             <div className="border-t border-slate-100 dark:border-slate-800 pt-2 pb-1">
                                 <div className="px-4 text-xs font-bold text-slate-400 uppercase tracking-wider">🏛️ {t('structure')}</div>
-                                <ResponsiveNavLink href={route('directions.index')} active={route().current('directions.index')}>{t('directions')}</ResponsiveNavLink>
-                                <ResponsiveNavLink href={route('departements.index')} active={route().current('departements.index')}>{t('departements')}</ResponsiveNavLink>
-                                <ResponsiveNavLink href={route('divisions.index')} active={route().current('divisions.index')}>{t('divisions')}</ResponsiveNavLink>
-                                <ResponsiveNavLink href={route('services.index')} active={route().current('services.index')}>{t('services')}</ResponsiveNavLink>
-                                <ResponsiveNavLink href={route('employes.index')} active={route().current('employes.index')}>{t('employes')}</ResponsiveNavLink>
+                                {canSeeDirections && <ResponsiveNavLink href={route('directions.index')} active={route().current('directions.index')}>{t('directions')}</ResponsiveNavLink>}
+                                {canSeeDepartements && <ResponsiveNavLink href={route('departements.index')} active={route().current('departements.index')}>{t('departements')}</ResponsiveNavLink>}
+                                {canSeeDivisions && <ResponsiveNavLink href={route('divisions.index')} active={route().current('divisions.index')}>{t('divisions')}</ResponsiveNavLink>}
+                                {canSeeServices && <ResponsiveNavLink href={route('services.index')} active={route().current('services.index')}>{t('services')}</ResponsiveNavLink>}
+                                {canSeeEmployes && <ResponsiveNavLink href={route('employes.index')} active={route().current('employes.index')}>{t('employes')}</ResponsiveNavLink>}
                             </div>
                         )}
 
-                        {(hasPerm('gerer_materiels') || hasPerm('voir_materiels')) && (
+                        {showParcDropdown && (
                             <div className="border-t border-slate-100 dark:border-slate-800 pt-2 pb-1">
                                 <div className="px-4 text-xs font-bold text-slate-400 uppercase tracking-wider">💻 {t('parc_materiel')}</div>
-                                <ResponsiveNavLink href={route('materiels.index')} active={route().current('materiels.index')}>{t('materiels')}</ResponsiveNavLink>
-                                <ResponsiveNavLink href={route('categories.index')} active={route().current('categories.index')}>{t('categories')}</ResponsiveNavLink>
-                                <ResponsiveNavLink href={route('affectations.index')} active={route().current('affectations.index')}>{t('affectations')}</ResponsiveNavLink>
+                                {canSeeMateriels && (
+                                    <>
+                                        <ResponsiveNavLink href={route('materiels.index')} active={route().current('materiels.index')}>{t('materiels')}</ResponsiveNavLink>
+                                        <ResponsiveNavLink href={route('categories.index')} active={route().current('categories.index')}>{t('categories')}</ResponsiveNavLink>
+                                    </>
+                                )}
+                                {canSeeAffectations && (
+                                    <ResponsiveNavLink href={route('affectations.index')} active={route().current('affectations.index')}>{t('affectations')}</ResponsiveNavLink>
+                                )}
                             </div>
                         )}
 
-                        {(hasPerm('voir_audit_logs') || isAdmin) && (
+                        {showAdminDropdown && (
                             <div className="border-t border-slate-100 dark:border-slate-800 pt-2 pb-1">
                                 <div className="px-4 text-xs font-bold text-slate-400 uppercase tracking-wider">🛡️ {t('administration')}</div>
-                                {hasPerm('voir_audit_logs') && (
+                                {canSeeAuditLogs && (
                                     <ResponsiveNavLink href={route('audit-logs.index')} active={route().current('audit-logs.index')}>{t('journal_audit')}</ResponsiveNavLink>
                                 )}
                                 {isAdmin && (
