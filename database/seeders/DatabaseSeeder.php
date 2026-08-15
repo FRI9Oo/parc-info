@@ -130,6 +130,26 @@ class DatabaseSeeder extends Seeder
             ['nom_permission' => 'creer_marque_modele', 'module' => 'Marques & Modèles', 'libelle' => 'Ajouter marque / modèle', 'description_permission' => 'Créer de nouvelles marques et modèles'],
             ['nom_permission' => 'modifier_marque_modele', 'module' => 'Marques & Modèles', 'libelle' => 'Modifier marque / modèle', 'description_permission' => 'Éditer les noms de marques et modèles'],
             ['nom_permission' => 'supprimer_marque_modele', 'module' => 'Marques & Modèles', 'libelle' => 'Supprimer marque / modèle', 'description_permission' => 'Supprimer des marques ou modèles'],
+
+            // 📋 Affectations - Compléments
+            ['nom_permission' => 'cloturer_affectation', 'module' => 'Affectations', 'libelle' => 'Clôturer & Restituer une affectation', 'description_permission' => 'Enregistrer la restitution du matériel et sa remise en stock'],
+
+            // 💻 Matériels - Compléments
+            ['nom_permission' => 'importer_materiels', 'module' => 'Matériels', 'libelle' => 'Importer en masse (Excel / CSV)', 'description_permission' => 'Téléverser des fichiers de données pour insertion massive d\'équipements'],
+
+            // 🛒 Achats - Compléments
+            ['nom_permission' => 'valider_achat', 'module' => 'Achats & Marchés', 'libelle' => 'Valider & Clôturer un Marché', 'description_permission' => 'Passer le statut d\'un achat à Validé'],
+
+            // 📥 Exports & Rapports
+            ['nom_permission' => 'exporter_donnees', 'module' => 'Exports & Rapports', 'libelle' => 'Exporter les données (CSV / Excel)', 'description_permission' => 'Télécharger les exports CSV des matériels, affectations, employés et achats'],
+
+            // 👤 Utilisateurs & Accès
+            ['nom_permission' => 'gerer_utilisateurs', 'module' => 'Utilisateurs & Accès', 'libelle' => 'Gérer les comptes utilisateurs', 'description_permission' => 'Créer, modifier, réinitialiser mots de passe et bloquer des comptes'],
+            ['nom_permission' => 'voir_utilisateurs', 'module' => 'Utilisateurs & Accès', 'libelle' => 'Consulter les utilisateurs', 'description_permission' => 'Afficher la liste des comptes utilisateurs et leurs rôles'],
+
+            // 🛡️ Rôles & Permissions
+            ['nom_permission' => 'gerer_roles', 'module' => 'Rôles & Permissions', 'libelle' => 'Gérer les rôles et permissions', 'description_permission' => 'Créer des rôles et configurer la matrice des permissions RBAC'],
+            ['nom_permission' => 'voir_roles', 'module' => 'Rôles & Permissions', 'libelle' => 'Consulter les rôles système', 'description_permission' => 'Afficher la liste des rôles et les permissions associées'],
         ];
 
         foreach ($permissions as $pData) {
@@ -137,7 +157,7 @@ class DatabaseSeeder extends Seeder
             $adminRole->permissions()->attach($perm->id);
 
             // Assign Manager permissions
-            if (in_array($perm->module, ['Affectations', 'Matériels', 'Employés', 'Fournisseurs', 'Achats & Marchés', 'Factures', 'Livraisons & Stocks', 'Marques & Modèles'])) {
+            if (in_array($perm->module, ['Affectations', 'Matériels', 'Employés', 'Fournisseurs', 'Achats & Marchés', 'Factures', 'Livraisons & Stocks', 'Marques & Modèles', 'Exports & Rapports'])) {
                 $managerRole->permissions()->attach($perm->id);
             }
 

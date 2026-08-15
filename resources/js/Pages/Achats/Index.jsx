@@ -3,10 +3,16 @@ import Modal from '@/Components/Modal';
 import Pagination from '@/Components/Pagination';
 import usePagination from '@/Hooks/usePagination';
 import { useLanguage } from '@/Context/LanguageContext';
-import { Head, useForm, Link, router } from '@inertiajs/react';
+import { Head, useForm, Link, router, usePage } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 
 export default function Index({ achats = [], fournisseurs = [] }) {
+    const { auth = {} } = usePage().props;
+    const { permissions = [], isAdmin = false } = auth;
+    const canCreate = isAdmin || permissions.includes('gerer_achats') || permissions.includes('creer_achat');
+    const canEdit = isAdmin || permissions.includes('gerer_achats') || permissions.includes('modifier_achat');
+    const canDelete = isAdmin || permissions.includes('gerer_achats') || permissions.includes('supprimer_achat');
+
     const { t } = useLanguage();
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
@@ -133,17 +139,19 @@ export default function Index({ achats = [], fournisseurs = [] }) {
                             </p>
                         </div>
 
-                        <button
-                            onClick={() => {
-                                setIsCreateModalOpen(true);
-                                createForm.reset();
-                                createForm.clearErrors();
-                            }}
-                            className="btn-zellij px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-2 shadow-md shadow-indigo-600/20"
-                        >
-                            <span>➕</span>
-                            <span>{t('achats_add')}</span>
-                        </button>
+                        {canCreate && (
+                            <button
+                                onClick={() => {
+                                    setIsCreateModalOpen(true);
+                                    createForm.reset();
+                                    createForm.clearErrors();
+                                }}
+                                className="btn-zellij px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-2 shadow-md shadow-indigo-600/20"
+                            >
+                                <span>➕</span>
+                                <span>{t('achats_add')}</span>
+                            </button>
+                        )}
                     </div>
 
                     {/* KPI Stat Cards */}
@@ -275,18 +283,22 @@ export default function Index({ achats = [], fournisseurs = [] }) {
                                                     >
                                                         👁️ {t('details')}
                                                     </Link>
-                                                    <button
-                                                        onClick={() => openEditModal(a)}
-                                                        className="px-2.5 py-1 text-slate-600 hover:text-slate-800 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-xs font-bold transition"
-                                                    >
-                                                        ✏️ {t('edit')}
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDelete(a.id, a.numero_achat)}
-                                                        className="px-2.5 py-1 text-rose-600 hover:text-rose-800 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg text-xs font-bold transition"
-                                                    >
-                                                        🗑️ {t('delete')}
-                                                    </button>
+                                                    {canEdit && (
+                                                        <button
+                                                            onClick={() => openEditModal(a)}
+                                                            className="px-2.5 py-1 text-slate-600 hover:text-slate-800 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-xs font-bold transition"
+                                                        >
+                                                            ✏️ {t('edit')}
+                                                        </button>
+                                                    )}
+                                                    {canDelete && (
+                                                        <button
+                                                            onClick={() => handleDelete(a.id, a.numero_achat)}
+                                                            className="px-2.5 py-1 text-rose-600 hover:text-rose-800 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg text-xs font-bold transition"
+                                                        >
+                                                            🗑️ {t('delete')}
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>

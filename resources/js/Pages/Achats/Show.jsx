@@ -1,10 +1,22 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import Modal from '@/Components/Modal';
 import { useLanguage } from '@/Context/LanguageContext';
-import { Head, useForm, Link, router } from '@inertiajs/react';
+import { Head, useForm, Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 
 export default function Show({ achat, categories = [], marques = [], modeles = [] }) {
+    const { auth = {} } = usePage().props;
+    const { permissions = [], isAdmin = false } = auth;
+
+    const canEditAchat = isAdmin || permissions.includes('gerer_achats') || permissions.includes('modifier_achat');
+    const canValidateAchat = isAdmin || permissions.includes('gerer_achats') || permissions.includes('valider_achat') || permissions.includes('modifier_achat');
+    const canAddBordereau = isAdmin || permissions.includes('gerer_achats') || permissions.includes('creer_achat') || permissions.includes('modifier_achat');
+    const canEditBordereau = isAdmin || permissions.includes('gerer_achats') || permissions.includes('modifier_achat');
+    const canDeleteBordereau = isAdmin || permissions.includes('gerer_achats') || permissions.includes('supprimer_achat');
+    const canAddFacture = isAdmin || permissions.includes('gerer_factures') || permissions.includes('creer_facture') || permissions.includes('gerer_achats');
+    const canDeleteFacture = isAdmin || permissions.includes('gerer_factures') || permissions.includes('supprimer_facture') || permissions.includes('gerer_achats');
+    const canCreateAffectation = isAdmin || permissions.includes('gerer_affectations') || permissions.includes('creer_affectation');
+
     const { t } = useLanguage();
     const [isAddLineModalOpen, setIsAddLineModalOpen] = useState(false);
     const [editingBordereau, setEditingBordereau] = useState(null);
@@ -204,12 +216,14 @@ export default function Show({ achat, categories = [], marques = [], modeles = [
                                                 </p>
                                             </div>
                                         </div>
-                                        <button
-                                            onClick={handleQuickValidate}
-                                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold transition shadow-md shadow-emerald-600/20 whitespace-nowrap shrink-0"
-                                        >
-                                            ✓ Valider ce marché
-                                        </button>
+                                        {canValidateAchat && (
+                                            <button
+                                                onClick={handleQuickValidate}
+                                                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold transition shadow-md shadow-emerald-600/20 whitespace-nowrap shrink-0"
+                                            >
+                                                ✓ Valider ce marché
+                                            </button>
+                                        )}
                                     </div>
                                 ) : (
                                     <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs">
@@ -241,17 +255,19 @@ export default function Show({ achat, categories = [], marques = [], modeles = [
                                 </p>
                             </div>
 
-                            <button
-                                onClick={() => {
-                                    setIsAddLineModalOpen(true);
-                                    lineForm.reset();
-                                    lineForm.clearErrors();
-                                }}
-                                className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition shadow-md shadow-indigo-600/20"
-                            >
-                                <span>➕</span>
-                                <span>{t('bordereau_add_line')}</span>
-                            </button>
+                            {canAddBordereau && (
+                                <button
+                                    onClick={() => {
+                                        setIsAddLineModalOpen(true);
+                                        lineForm.reset();
+                                        lineForm.clearErrors();
+                                    }}
+                                    className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition shadow-md shadow-indigo-600/20"
+                                >
+                                    <span>➕</span>
+                                    <span>{t('bordereau_add_line')}</span>
+                                </button>
+                            )}
                         </div>
 
                         <div className="overflow-x-auto">
@@ -317,18 +333,25 @@ export default function Show({ achat, categories = [], marques = [], modeles = [
                                                 </td>
                                                 <td className="py-3.5 px-3.5 text-right whitespace-nowrap">
                                                     <div className="flex items-center justify-end gap-1.5">
-                                                        <button
-                                                            onClick={() => openEditLineModal(b)}
-                                                            className="p-1.5 text-indigo-600 hover:text-indigo-800 rounded-lg transition"
-                                                        >
-                                                            ✏️
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDeleteLine(b.id, b.nom_materiel)}
-                                                            className="p-1.5 text-rose-600 hover:text-rose-800 rounded-lg transition"
-                                                        >
-                                                            🗑️
-                                                        </button>
+                                                        {canEditBordereau && (
+                                                            <button
+                                                                onClick={() => openEditLineModal(b)}
+                                                                className="p-1.5 text-indigo-600 hover:text-indigo-800 rounded-lg transition"
+                                                            >
+                                                                ✏️
+                                                            </button>
+                                                        )}
+                                                        {canDeleteBordereau && (
+                                                            <button
+                                                                onClick={() => handleDeleteLine(b.id, b.nom_materiel)}
+                                                                className="p-1.5 text-rose-600 hover:text-rose-800 rounded-lg transition"
+                                                            >
+                                                                🗑️
+                                                            </button>
+                                                        )}
+                                                        {!canEditBordereau && !canDeleteBordereau && (
+                                                            <span className="text-slate-400 text-[11px]">—</span>
+                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>
@@ -359,18 +382,20 @@ export default function Show({ achat, categories = [], marques = [], modeles = [
                                 </p>
                             </div>
 
-                            <button
-                                onClick={() => {
-                                    setIsAddFactureModalOpen(true);
-                                    factureForm.reset();
-                                    factureForm.setData('achat_id', achat.id);
-                                    factureForm.clearErrors();
-                                }}
-                                className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition shadow-md shadow-emerald-600/20"
-                            >
-                                <span>➕</span>
-                                <span>{t('factures_add')}</span>
-                            </button>
+                            {canAddFacture && (
+                                <button
+                                    onClick={() => {
+                                        setIsAddFactureModalOpen(true);
+                                        factureForm.reset();
+                                        factureForm.setData('achat_id', achat.id);
+                                        factureForm.clearErrors();
+                                    }}
+                                    className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition shadow-md shadow-emerald-600/20"
+                                >
+                                    <span>➕</span>
+                                    <span>{t('factures_add')}</span>
+                                </button>
+                            )}
                         </div>
 
                         <div className="overflow-x-auto">
@@ -404,12 +429,16 @@ export default function Show({ achat, categories = [], marques = [], modeles = [
                                                 {(parseFloat(f.montant_ttc) || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} DH
                                             </td>
                                             <td className="py-3.5 px-3.5 text-right whitespace-nowrap">
-                                                <button
-                                                    onClick={() => handleDeleteFacture(f.id, f.numero_facture)}
-                                                    className="p-1.5 text-rose-600 hover:text-rose-800 rounded-lg transition"
-                                                >
-                                                    🗑️
-                                                </button>
+                                                {canDeleteFacture ? (
+                                                    <button
+                                                        onClick={() => handleDeleteFacture(f.id, f.numero_facture)}
+                                                        className="p-1.5 text-rose-600 hover:text-rose-800 rounded-lg transition"
+                                                    >
+                                                        🗑️
+                                                    </button>
+                                                ) : (
+                                                    <span className="text-slate-400 text-[11px]">—</span>
+                                                )}
                                             </td>
                                         </tr>
                                     ))}
@@ -438,13 +467,15 @@ export default function Show({ achat, categories = [], marques = [], modeles = [
                                 </p>
                             </div>
 
-                            <Link
-                                href={route('affectations.index')}
-                                className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition shadow-md shadow-indigo-600/20"
-                            >
-                                <span>➕</span>
-                                <span>{t('affectations_new')}</span>
-                            </Link>
+                            {canCreateAffectation && (
+                                <Link
+                                    href={route('affectations.index')}
+                                    className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition shadow-md shadow-indigo-600/20"
+                                >
+                                    <span>➕</span>
+                                    <span>{t('affectations_new')}</span>
+                                </Link>
+                            )}
                         </div>
 
                         <div className="overflow-x-auto">
@@ -493,19 +524,23 @@ export default function Show({ achat, categories = [], marques = [], modeles = [
                                                     )}
                                                 </td>
                                                 <td className="py-3 px-3.5 text-right whitespace-nowrap">
-                                                    {!isAssigned ? (
-                                                        <Link
-                                                            href={route('affectations.index')}
-                                                            className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-lg text-xs font-extrabold transition inline-flex items-center gap-1"
-                                                        >
-                                                            ➕ Affecter
-                                                        </Link>
+                                                    {!currentAff ? (
+                                                        canCreateAffectation ? (
+                                                            <Link
+                                                                href={route('affectations.index', { materiel_id: m.id })}
+                                                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition shadow-sm"
+                                                            >
+                                                                ➕ Affecter ce matériel
+                                                            </Link>
+                                                        ) : (
+                                                            <span className="text-[11px] text-slate-400 italic">Non affecté</span>
+                                                        )
                                                     ) : (
                                                         <Link
-                                                            href={route('affectations.index')}
-                                                            className="text-xs text-slate-500 hover:text-indigo-600 transition"
+                                                            href={route('affectations.index', { highlight: currentAff.id })}
+                                                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-lg text-xs font-extrabold transition"
                                                         >
-                                                            Voir affectation →
+                                                            👁️ Voir affectation →
                                                         </Link>
                                                     )}
                                                 </td>

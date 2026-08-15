@@ -5,7 +5,7 @@ import Pagination from '@/Components/Pagination';
 import usePagination from '@/Hooks/usePagination';
 import { useLanguage } from '@/Context/LanguageContext';
 import { Head, router, usePage } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 
 export default function Index({ affectations, employes, materiels }) {
     const { auth = {}, errors: pageErrors } = usePage().props;
@@ -18,10 +18,11 @@ export default function Index({ affectations, employes, materiels }) {
 
     const today = new Date().toISOString().slice(0, 10);
 
-    // Parse URL params to detect if opened from alert banner
+    // Parse URL params to detect if opened from alert banner or Achat details
     const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
     const isFromAlert = urlParams.get('fromAlert') === 'true';
     const highlightTargetId = urlParams.get('highlight') ? Number(urlParams.get('highlight')) : null;
+    const preselectMaterielId = urlParams.get('materiel_id') ? Number(urlParams.get('materiel_id')) : null;
 
     // ---------- Search & Filter State ----------
     const [searchQuery, setSearchQuery] = useState('');
@@ -111,13 +112,44 @@ export default function Index({ affectations, employes, materiels }) {
     };
 
     // ---------- Ajouter une affectation ----------
-    const [addData, setAddData] = useState({
+    const preselectedMat = useMemo(() => {
+        if (!preselectMaterielId) return null;
+        return materiels.find((m) => m.id === preselectMaterielId) || null;
+    }, [preselectMaterielId, materiels]);
+
+    const [addData, setAddData] = useState(() => ({
         date_affectation: today,
         matricule: '',
         search_type: 'serie',
-        search_value: '',
-    });
+        search_value: preselectedMat ? preselectedMat.numero_serie : '',
+    }));
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Auto-jump to page and smoothly scroll to the highlighted affectation
+    useEffect(() => {
+        if (highlightTargetId) {
+            const itemIndex = filteredAffectations.findIndex((a) => a.id === highlightTargetId);
+            if (itemIndex !== -1) {
+                const targetPage = Math.floor(itemIndex / pageSize) + 1;
+                if (targetPage !== currentPage) {
+                    setCurrentPage(targetPage);
+                }
+                setTimeout(() => {
+                    const el = document.getElementById(`aff-${highlightTargetId}`);
+                    if (el) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }, 350);
+            }
+        } else if (preselectMaterielId) {
+            setTimeout(() => {
+                const formEl = document.getElementById('add-affectation-card');
+                if (formEl) {
+                    formEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 300);
+        }
+    }, [highlightTargetId, preselectMaterielId, filteredAffectations, pageSize]);
 
     const matchedEmploye = useMemo(() => {
         if (!addData.matricule.trim()) return null;
@@ -278,10 +310,18 @@ export default function Index({ affectations, employes, materiels }) {
 
                     {/* Ajouter une affectation */}
                     {canCreate && (
-                        <div className="bg-white shadow-sm sm:rounded-2xl border border-slate-200 p-6 mb-6">
-                            <h2 className="text-base font-extrabold mb-4 text-slate-800 flex items-center gap-2">
-                                <span>➕</span> {t('affectations_new')}
-                            </h2>
+                        <div id="add-affectation-card" className={`bg-white shadow-sm sm:rounded-2xl border p-6 mb-6 transition-all duration-300 ${preselectMaterielId ? 'border-indigo-400 ring-2 ring-indigo-200' : 'border-slate-200'}`}>
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                                    <span>➕</span> {t('affectations_new')}
+                                </h2>
+                                {preselectedMat && (
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                        <span>🛒</span>
+                                        <span>Matériel pré-sélectionné : {preselectedMat.nom} ({preselectedMat.numero_serie})</span>
+                                    </span>
+                                )}
+                            </div>
                             <form onSubmit={submitAdd} className="grid grid-cols-1 md:grid-cols-4 gap-3">
                                 <input
                                     type="date"
@@ -327,7 +367,7 @@ export default function Index({ affectations, employes, materiels }) {
                                         {matchedMateriel?.unavailable
                                             ? `⚠️ ${t('materiels_affecte')} (${matchedMateriel.nom})`
                                             : matchedMateriel
-                                                ? `✓ ${matchedMateriel.nom} — ${matchedMateriel.marque} ${matchedMateriel.modele}`
+                                                ? `✓ ${t('materiels')} : ${matchedMateriel.nom} [${matchedMateriel.categorie?.nom_categorie ?? '—'}]`
                                                 : addData.search_value
                                                     ? '⚠️ Aucun matériel trouvé'
                                                     : '⏳ ' + t('affectations_select_equipment')}
@@ -336,47 +376,74 @@ export default function Index({ affectations, employes, materiels }) {
 
                                 <button
                                     type="submit"
-                                    disabled={isSubmitting || !matchedEmploye || !matchedMateriel || matchedMateriel.unavailable}
-                                    className="bg-[#11508f] text-white px-5 py-2.5 rounded-xl md:col-span-4 hover:bg-[#0d3d6e] transition font-bold text-xs shadow-md shadow-[#11508f]/20 disabled:opacity-50"
+                                    disabled={!matchedEmploye || !matchedMateriel || matchedMateriel.unavailable || isSubmitting}
+                                    className={`btn-zellij md:col-span-4 py-2.5 rounded-xl font-bold text-sm ${(!matchedEmploye || !matchedMateriel || matchedMateriel.unavailable || isSubmitting) ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 >
-                                    {isSubmitting ? t('loading') : t('affectations_new')}
+                                    {isSubmitting ? t('saving') : t('affectations_assign_button')}
                                 </button>
                             </form>
                         </div>
                     )}
 
-                    {/* Tableau */}
-                    <div className="lux-card p-6">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                            <div className="flex items-center gap-4">
-                                <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">{t('affectations_title')} ({filteredAffectations.length})</h1>
-                                <a
-                                    href={route('exports.affectations.csv')}
-                                    className="inline-flex items-center bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-md shadow-emerald-600/10"
-                                >
-                                    📥 {t('export_csv')}
-                                </a>
-                            </div>
+                    <div className="bg-white shadow-sm sm:rounded-2xl border border-slate-200 p-6">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                            <h1 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+                                <span>📋</span>
+                                <span>{t('affectations_title')}</span>
+                                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                                    {totalItems}
+                                </span>
+                            </h1>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1 md:max-w-xl">
-                                <input
-                                    type="text"
-                                    placeholder={t('search_placeholder')}
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="border border-slate-200 rounded-xl px-3.5 py-2 text-sm w-full focus:ring-1 focus:ring-[#11508f] bg-slate-50/50"
-                                />
+                            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                                <div className="relative flex-1 sm:w-64">
+                                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 text-sm">
+                                        🔍
+                                    </span>
+                                    <input
+                                        type="text"
+                                        placeholder={t('search_placeholder')}
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs w-full focus:ring-2 focus:ring-[#11508f] focus:border-transparent transition"
+                                    />
+                                    {searchQuery && (
+                                        <button
+                                            onClick={() => setSearchQuery('')}
+                                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 text-xs font-bold"
+                                        >
+                                            ✕
+                                        </button>
+                                    )}
+                                </div>
 
-                                <select
-                                    value={etatFilter}
-                                    onChange={(e) => setEtatFilter(e.target.value)}
-                                    className="border border-slate-200 rounded-xl px-3.5 py-2 text-sm w-full bg-white focus:ring-1 focus:ring-[#11508f]"
-                                >
-                                    <option value="all">{t('affectations_all')}</option>
-                                    <option value="Affecté">{t('affectations_active')}</option>
-                                    <option value="Clôturé">{t('affectations_closed')}</option>
-                                    <option value="prolonge">⚠️ {t('affectations_prolonged', { months: prolongeMonths })}</option>
-                                </select>
+                                <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+                                    <button
+                                        onClick={() => setEtatFilter('all')}
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${etatFilter === 'all' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                                    >
+                                        {t('all')}
+                                    </button>
+                                    <button
+                                        onClick={() => setEtatFilter('affecte')}
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${etatFilter === 'affecte' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                                    >
+                                        {t('status_affecte')}
+                                    </button>
+                                    <button
+                                        onClick={() => setEtatFilter('cloture')}
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${etatFilter === 'cloture' ? 'bg-slate-700 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                                    >
+                                        {t('status_cloture')}
+                                    </button>
+                                    <button
+                                        onClick={() => setEtatFilter('prolonge')}
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 ${etatFilter === 'prolonge' ? 'bg-amber-500 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                                    >
+                                        <span>⏱️</span>
+                                        <span>{t('dashboard_alert_title')}</span>
+                                    </button>
+                                </div>
 
                                 {etatFilter === 'prolonge' && (
                                     <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 rounded-xl px-3 py-1.5 text-xs text-amber-900 dark:text-amber-300">
@@ -398,6 +465,19 @@ export default function Index({ affectations, employes, materiels }) {
                                 )}
                             </div>
                         </div>
+
+                        {/* Top banner alert if coming from Achat with Highlight */}
+                        {highlightTargetId && (
+                            <div className="mb-4 p-3 bg-indigo-50 border border-indigo-200 rounded-xl flex items-center justify-between text-xs text-indigo-950 shadow-sm">
+                                <span className="font-bold flex items-center gap-2">
+                                    <span>🎯</span>
+                                    <span>Affectation mise en évidence depuis le dossier Achat / Marché (Réf #AFF-{String(highlightTargetId).padStart(5, '0')}).</span>
+                                </span>
+                                <a href={route('affectations.index')} className="text-indigo-700 font-bold underline hover:text-indigo-900">
+                                    Afficher tout sans surbrillance
+                                </a>
+                            </div>
+                        )}
 
                         {/* Long-Standing Filter Banner Alert */}
                         {isFromAlert && (
@@ -433,13 +513,21 @@ export default function Index({ affectations, employes, materiels }) {
                                 </thead>
                                 <tbody className="text-sm">
                                     {paginatedAffectations.map((a, index) => {
+                                        const isExactHighlighted = highlightTargetId && a.id === highlightTargetId;
                                         const isProlonged = a.etat === 'Affecté' && new Date(a.date_affectation) <= new Date(new Date().setMonth(new Date().getMonth() - prolongeMonths));
-                                        const isHighlighted = isFromAlert && (highlightTargetId ? a.id === highlightTargetId : isProlonged);
+                                        const isHighlighted = isExactHighlighted || (isFromAlert && (highlightTargetId ? a.id === highlightTargetId : isProlonged));
 
                                         return (
                                             <tr
                                                 key={a.id}
-                                                className={`border-b transition ${isHighlighted ? 'bg-amber-100/80 ring-2 ring-amber-400 font-medium' : 'hover:bg-gray-50'}`}
+                                                id={`aff-${a.id}`}
+                                                className={`border-b transition-all duration-300 ${
+                                                    isExactHighlighted
+                                                        ? 'bg-indigo-100/80 dark:bg-indigo-950/80 ring-2 ring-indigo-500 font-semibold shadow-md'
+                                                        : isHighlighted
+                                                        ? 'bg-amber-100/80 ring-2 ring-amber-400 font-medium'
+                                                        : 'hover:bg-gray-50'
+                                                }`}
                                             >
                                                 <td className="py-2 px-3 whitespace-nowrap">{formatDate(a.date_affectation)}</td>
                                                 <td className="py-2 px-3 whitespace-nowrap">{a.employe?.nom}</td>
@@ -454,9 +542,15 @@ export default function Index({ affectations, employes, materiels }) {
                                                 <td className="py-2 px-3 whitespace-nowrap">{a.materiel?.categorie?.nom_categorie}</td>
                                                 <td className="py-2 px-3 whitespace-nowrap">{formatDate(a.date_restitution)}</td>
                                                 <td className="py-2 px-3 whitespace-nowrap">
-                                                    <div className="flex items-center gap-1.5">
+                                                    <div className="flex items-center gap-1.5 flex-wrap">
                                                         {etatBadge(a.etat)}
-                                                        {isProlonged && (
+                                                        {isExactHighlighted && (
+                                                            <span className="inline-flex items-center gap-1 text-[10px] bg-indigo-600 text-white px-2 py-0.5 rounded-full font-extrabold uppercase tracking-wider shadow-xs">
+                                                                <span>📌</span>
+                                                                <span>Sélectionné</span>
+                                                            </span>
+                                                        )}
+                                                        {isProlonged && !isExactHighlighted && (
                                                             <span className="text-[10px] bg-amber-200 text-amber-900 px-2 py-0.5 rounded font-bold uppercase tracking-wider">
                                                                 ⚠️ Prolongée (+ de {prolongeMonths} m)
                                                             </span>

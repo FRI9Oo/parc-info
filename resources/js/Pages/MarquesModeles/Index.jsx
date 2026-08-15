@@ -3,10 +3,16 @@ import Modal from '@/Components/Modal';
 import Pagination from '@/Components/Pagination';
 import usePagination from '@/Hooks/usePagination';
 import { useLanguage } from '@/Context/LanguageContext';
-import { Head, useForm, router } from '@inertiajs/react';
+import { Head, useForm, router, usePage } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 
 export default function Index({ marques = [] }) {
+    const { auth = {} } = usePage().props;
+    const { permissions = [], isAdmin = false } = auth;
+    const canCreate = isAdmin || permissions.includes('gerer_marques_modeles') || permissions.includes('creer_marque_modele');
+    const canEdit = isAdmin || permissions.includes('gerer_marques_modeles') || permissions.includes('modifier_marque_modele');
+    const canDelete = isAdmin || permissions.includes('gerer_marques_modeles') || permissions.includes('supprimer_marque_modele');
+
     const { t } = useLanguage();
     const [searchQuery, setSearchQuery] = useState('');
     const [editingMarque, setEditingMarque] = useState(null);
@@ -117,16 +123,17 @@ export default function Index({ marques = [] }) {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className={canCreate ? "grid grid-cols-1 lg:grid-cols-3 gap-6" : "space-y-6"}>
 
                         {/* Add Brand Form Card */}
-                        <div className="lux-card p-6 h-fit border border-slate-200/80 dark:border-slate-800">
-                            <h2 className="text-sm font-extrabold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                                <span>➕</span>
-                                <span>{t('marques_add')}</span>
-                            </h2>
+                        {canCreate && (
+                            <div className="lux-card p-6 h-fit border border-slate-200/80 dark:border-slate-800">
+                                <h2 className="text-sm font-extrabold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                                    <span>➕</span>
+                                    <span>{t('marques_add')}</span>
+                                </h2>
 
-                            <form onSubmit={handleCreateMarque} className="space-y-4">
+                                <form onSubmit={handleCreateMarque} className="space-y-4">
                                 <div>
                                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                                         {t('marque_name')} *
@@ -155,15 +162,16 @@ export default function Index({ marques = [] }) {
                                 <button
                                     type="submit"
                                     disabled={marqueForm.processing}
-                                    className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-extrabold shadow-md shadow-indigo-600/20 transition"
+                                    className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-extrabold shadow-md shadow-indigo-600/20 transition duration-150"
                                 >
                                     {marqueForm.processing ? t('loading') : t('add')}
                                 </button>
                             </form>
                         </div>
+                        )}
 
-                        {/* Brands & Associated Models Catalog Card */}
-                        <div className="lg:col-span-2 space-y-4">
+                        {/* List Brands & Models */}
+                        <div className={canCreate ? "lg:col-span-2 space-y-4" : "space-y-4"}>
                             <div className="lux-card p-6 border border-slate-200/80 dark:border-slate-800">
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
                                     <h2 className="text-sm font-extrabold text-slate-900 dark:text-white">
@@ -202,31 +210,37 @@ export default function Index({ marques = [] }) {
                                                 </div>
 
                                                 <div className="flex items-center gap-2">
-                                                    <button
-                                                        onClick={() => {
-                                                            setAddingModeleForMarque(m);
-                                                            modeleForm.setData('marque_id', m.id);
-                                                            modeleForm.setData('nom_modele', '');
-                                                        }}
-                                                        className="px-2.5 py-1 text-xs font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 rounded-lg transition"
-                                                    >
-                                                        ➕ {t('modeles_add')}
-                                                    </button>
-                                                    <button
-                                                        onClick={() => {
-                                                            setEditingMarque(m);
-                                                            editMarqueForm.setData('nom_marque', m.nom_marque);
-                                                        }}
-                                                        className="p-1.5 text-slate-500 hover:text-indigo-600 rounded-lg transition text-xs"
-                                                    >
-                                                        ✏️
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteMarque(m.id, m.nom_marque)}
-                                                        className="p-1.5 text-slate-500 hover:text-rose-600 rounded-lg transition text-xs"
-                                                    >
-                                                        🗑️
-                                                    </button>
+                                                    {canCreate && (
+                                                        <button
+                                                            onClick={() => {
+                                                                setAddingModeleForMarque(m);
+                                                                modeleForm.setData('marque_id', m.id);
+                                                                modeleForm.setData('nom_modele', '');
+                                                            }}
+                                                            className="px-2.5 py-1 text-xs font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 rounded-lg transition"
+                                                        >
+                                                            ➕ {t('modeles_add')}
+                                                        </button>
+                                                    )}
+                                                    {canEdit && (
+                                                        <button
+                                                            onClick={() => {
+                                                                setEditingMarque(m);
+                                                                editMarqueForm.setData('nom_marque', m.nom_marque);
+                                                            }}
+                                                            className="p-1.5 text-slate-500 hover:text-indigo-600 rounded-lg transition text-xs"
+                                                        >
+                                                            ✏️
+                                                        </button>
+                                                    )}
+                                                    {canDelete && (
+                                                        <button
+                                                            onClick={() => handleDeleteMarque(m.id, m.nom_marque)}
+                                                            className="p-1.5 text-slate-500 hover:text-rose-600 rounded-lg transition text-xs"
+                                                        >
+                                                            🗑️
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </div>
 
@@ -241,24 +255,28 @@ export default function Index({ marques = [] }) {
                                                         <span className="text-[10px] text-slate-400 font-normal">
                                                             ({mod.materiels_count || 0})
                                                         </span>
-                                                        <button
-                                                            onClick={() => {
-                                                                setEditingModele(mod);
-                                                                editModeleForm.setData({
-                                                                    nom_modele: mod.nom_modele,
-                                                                    marque_id: mod.marque_id,
-                                                                });
-                                                            }}
-                                                            className="opacity-0 group-hover:opacity-100 text-indigo-500 hover:text-indigo-700 transition"
-                                                        >
-                                                            ✏️
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDeleteModele(mod.id, mod.nom_modele)}
-                                                            className="opacity-0 group-hover:opacity-100 text-rose-500 hover:text-rose-700 transition"
-                                                        >
-                                                            ✕
-                                                        </button>
+                                                        {canEdit && (
+                                                            <button
+                                                                onClick={() => {
+                                                                    setEditingModele(mod);
+                                                                    editModeleForm.setData({
+                                                                        nom_modele: mod.nom_modele,
+                                                                        marque_id: mod.marque_id,
+                                                                    });
+                                                                }}
+                                                                className="opacity-0 group-hover:opacity-100 text-indigo-500 hover:text-indigo-700 transition"
+                                                            >
+                                                                ✏️
+                                                            </button>
+                                                        )}
+                                                        {canDelete && (
+                                                            <button
+                                                                onClick={() => handleDeleteModele(mod.id, mod.nom_modele)}
+                                                                className="opacity-0 group-hover:opacity-100 text-rose-500 hover:text-rose-700 transition"
+                                                            >
+                                                                ✕
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 ))}
                                                 {(!m.modeles || m.modeles.length === 0) && (

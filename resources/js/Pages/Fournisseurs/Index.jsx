@@ -3,10 +3,16 @@ import Modal from '@/Components/Modal';
 import Pagination from '@/Components/Pagination';
 import usePagination from '@/Hooks/usePagination';
 import { useLanguage } from '@/Context/LanguageContext';
-import { Head, useForm, router } from '@inertiajs/react';
+import { Head, useForm, router, usePage } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 
 export default function Index({ fournisseurs = [] }) {
+    const { auth = {} } = usePage().props;
+    const { permissions = [], isAdmin = false } = auth;
+    const canCreate = isAdmin || permissions.includes('gerer_fournisseurs') || permissions.includes('creer_fournisseur');
+    const canEdit = isAdmin || permissions.includes('gerer_fournisseurs') || permissions.includes('modifier_fournisseur');
+    const canDelete = isAdmin || permissions.includes('gerer_fournisseurs') || permissions.includes('supprimer_fournisseur');
+
     const { t } = useLanguage();
     const [searchQuery, setSearchQuery] = useState('');
     const [editingFournisseur, setEditingFournisseur] = useState(null);
@@ -104,93 +110,95 @@ export default function Index({ fournisseurs = [] }) {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className={canCreate ? "grid grid-cols-1 lg:grid-cols-3 gap-6" : "space-y-6"}>
 
                         {/* Add Form Card */}
-                        <div className="lux-card p-6 h-fit border border-slate-200/80 dark:border-slate-800">
-                            <h2 className="text-sm font-extrabold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                                <span>➕</span>
-                                <span>{t('fournisseurs_add')}</span>
-                            </h2>
+                        {canCreate && (
+                            <div className="lux-card p-6 h-fit border border-slate-200/80 dark:border-slate-800">
+                                <h2 className="text-sm font-extrabold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                                    <span>➕</span>
+                                    <span>{t('fournisseurs_add')}</span>
+                                </h2>
 
-                            <form onSubmit={handleCreate} className="space-y-4">
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                                        {t('fournisseur_name')} *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={createForm.data.nom_fournisseur}
-                                        onChange={(e) => {
-                                            createForm.setData('nom_fournisseur', e.target.value);
-                                            createForm.clearErrors('nom_fournisseur');
-                                        }}
-                                        placeholder="Ex: Dell Maroc SA"
-                                        className={`w-full text-xs rounded-xl border px-3.5 py-2.5 bg-slate-50/50 dark:bg-slate-900 dark:text-white transition ${
-                                            createForm.errors.nom_fournisseur
-                                                ? 'border-rose-500 ring-1 ring-rose-400 bg-rose-50/30'
-                                                : 'border-slate-200 dark:border-slate-700 focus:ring-1 focus:ring-indigo-500'
-                                        }`}
-                                    />
-                                    {createForm.errors.nom_fournisseur && (
-                                        <p className="text-[11px] text-rose-600 mt-1 font-semibold">
-                                            ⚠️ {createForm.errors.nom_fournisseur}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                                        {t('fournisseur_contact')}
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={createForm.data.contact_personne}
-                                        onChange={(e) => createForm.setData('contact_personne', e.target.value)}
-                                        placeholder="Ex: M. Mohammed Alami"
-                                        className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2.5 bg-slate-50/50 dark:bg-slate-900 dark:text-white"
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <form onSubmit={handleCreate} className="space-y-4">
                                     <div>
                                         <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                                            {t('fournisseur_phone')}
+                                            {t('fournisseur_name')} *
                                         </label>
                                         <input
                                             type="text"
-                                            value={createForm.data.telephone_fournisseur}
-                                            onChange={(e) => createForm.setData('telephone_fournisseur', e.target.value)}
-                                            placeholder="+212 5..."
-                                            className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2.5 bg-slate-50/50 dark:bg-slate-900 dark:text-white"
+                                            value={createForm.data.nom_fournisseur}
+                                            onChange={(e) => {
+                                                createForm.setData('nom_fournisseur', e.target.value);
+                                                createForm.clearErrors('nom_fournisseur');
+                                            }}
+                                            placeholder="Ex: Dell Maroc SA"
+                                            className={`w-full text-xs rounded-xl border px-3.5 py-2.5 bg-slate-50/50 dark:bg-slate-900 dark:text-white transition ${
+                                                createForm.errors.nom_fournisseur
+                                                    ? 'border-rose-500 ring-1 ring-rose-400 bg-rose-50/30'
+                                                    : 'border-slate-200 dark:border-slate-700 focus:ring-1 focus:ring-indigo-500'
+                                            }`}
                                         />
+                                        {createForm.errors.nom_fournisseur && (
+                                            <p className="text-[11px] text-rose-600 mt-1 font-semibold">
+                                                ⚠️ {createForm.errors.nom_fournisseur}
+                                            </p>
+                                        )}
                                     </div>
+
                                     <div>
                                         <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                                            {t('fournisseur_address')}
+                                            {t('fournisseur_contact')}
                                         </label>
                                         <input
                                             type="text"
-                                            value={createForm.data.adresse_fournisseur}
-                                            onChange={(e) => createForm.setData('adresse_fournisseur', e.target.value)}
-                                            placeholder="Ex: Agadir, Maroc"
+                                            value={createForm.data.contact_personne}
+                                            onChange={(e) => createForm.setData('contact_personne', e.target.value)}
+                                            placeholder="Ex: M. Mohammed Alami"
                                             className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2.5 bg-slate-50/50 dark:bg-slate-900 dark:text-white"
                                         />
                                     </div>
-                                </div>
 
-                                <button
-                                    type="submit"
-                                    disabled={createForm.processing}
-                                    className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-extrabold shadow-md shadow-indigo-600/20 transition duration-150"
-                                >
-                                    {createForm.processing ? t('loading') : t('add')}
-                                </button>
-                            </form>
-                        </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                                                {t('fournisseur_phone')}
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={createForm.data.telephone_fournisseur}
+                                                onChange={(e) => createForm.setData('telephone_fournisseur', e.target.value)}
+                                                placeholder="+212 5..."
+                                                className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2.5 bg-slate-50/50 dark:bg-slate-900 dark:text-white"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                                                {t('fournisseur_address')}
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={createForm.data.adresse_fournisseur}
+                                                onChange={(e) => createForm.setData('adresse_fournisseur', e.target.value)}
+                                                placeholder="Ex: Agadir, Maroc"
+                                                className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2.5 bg-slate-50/50 dark:bg-slate-900 dark:text-white"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        type="submit"
+                                        disabled={createForm.processing}
+                                        className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-extrabold shadow-md shadow-indigo-600/20 transition duration-150"
+                                    >
+                                        {createForm.processing ? t('loading') : t('add')}
+                                    </button>
+                                </form>
+                            </div>
+                        )}
 
                         {/* List / Table Card */}
-                        <div className="lg:col-span-2 space-y-4">
+                        <div className={canCreate ? "lg:col-span-2 space-y-4" : "space-y-4"}>
                             <div className="lux-card p-6 border border-slate-200/80 dark:border-slate-800">
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                                     <h2 className="text-sm font-extrabold text-slate-900 dark:text-white">
@@ -242,18 +250,25 @@ export default function Index({ fournisseurs = [] }) {
                                                     </td>
                                                     <td className="py-3 px-3.5 text-right whitespace-nowrap">
                                                         <div className="flex items-center justify-end gap-2">
-                                                            <button
-                                                                onClick={() => openEditModal(f)}
-                                                                className="px-2.5 py-1 text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-lg text-xs font-bold transition"
-                                                            >
-                                                                ✏️ {t('edit')}
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleDelete(f.id, f.nom_fournisseur)}
-                                                                className="px-2.5 py-1 text-rose-600 hover:text-rose-800 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg text-xs font-bold transition"
-                                                            >
-                                                                🗑️ {t('delete')}
-                                                            </button>
+                                                            {canEdit && (
+                                                                <button
+                                                                    onClick={() => openEditModal(f)}
+                                                                    className="px-2.5 py-1 text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-lg text-xs font-bold transition"
+                                                                >
+                                                                    ✏️ {t('edit')}
+                                                                </button>
+                                                            )}
+                                                            {canDelete && (
+                                                                <button
+                                                                    onClick={() => handleDelete(f.id, f.nom_fournisseur)}
+                                                                    className="px-2.5 py-1 text-rose-600 hover:text-rose-800 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg text-xs font-bold transition"
+                                                                >
+                                                                    🗑️ {t('delete')}
+                                                                </button>
+                                                            )}
+                                                            {!canEdit && !canDelete && (
+                                                                <span className="text-slate-400 text-xs">—</span>
+                                                            )}
                                                         </div>
                                                     </td>
                                                 </tr>

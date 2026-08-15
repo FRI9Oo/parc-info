@@ -3,10 +3,15 @@ import Modal from '@/Components/Modal';
 import Pagination from '@/Components/Pagination';
 import usePagination from '@/Hooks/usePagination';
 import { useLanguage } from '@/Context/LanguageContext';
-import { Head, useForm, Link, router } from '@inertiajs/react';
+import { Head, useForm, Link, router, usePage } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 
 export default function Index({ livraisons = [], bordereaux = [] }) {
+    const { auth = {} } = usePage().props;
+    const { permissions = [], isAdmin = false } = auth;
+    const canCreate = isAdmin || permissions.includes('gerer_livraisons') || permissions.includes('creer_livraison');
+    const canDelete = isAdmin || permissions.includes('gerer_livraisons') || permissions.includes('supprimer_livraison');
+
     const { t } = useLanguage();
     const [searchQuery, setSearchQuery] = useState('');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -85,17 +90,19 @@ export default function Index({ livraisons = [], bordereaux = [] }) {
                             </p>
                         </div>
 
-                        <button
-                            onClick={() => {
-                                setIsCreateModalOpen(true);
-                                createForm.reset();
-                                createForm.clearErrors();
-                            }}
-                            className="btn-zellij px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-2 shadow-md shadow-indigo-600/20"
-                        >
-                            <span>➕</span>
-                            <span>{t('livraisons_add')}</span>
-                        </button>
+                        {canCreate && (
+                            <button
+                                onClick={() => {
+                                    setIsCreateModalOpen(true);
+                                    createForm.reset();
+                                    createForm.clearErrors();
+                                }}
+                                className="btn-zellij px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-2 shadow-md shadow-indigo-600/20"
+                            >
+                                <span>➕</span>
+                                <span>{t('livraisons_add')}</span>
+                            </button>
+                        )}
                     </div>
 
                     {/* KPI Summary Cards */}
@@ -200,12 +207,16 @@ export default function Index({ livraisons = [], bordereaux = [] }) {
                                                 </span>
                                             </td>
                                             <td className="py-3.5 px-3.5 text-right whitespace-nowrap">
-                                                <button
-                                                    onClick={() => handleDelete(l.id, l.reference_livraison)}
-                                                    className="p-1.5 text-rose-600 hover:text-rose-800 dark:text-rose-400 hover:bg-rose-50 rounded-lg transition text-xs font-bold"
-                                                >
-                                                    🗑️ {t('delete')}
-                                                </button>
+                                                {canDelete ? (
+                                                    <button
+                                                        onClick={() => handleDelete(l.id, l.reference_livraison)}
+                                                        className="p-1.5 text-rose-600 hover:text-rose-800 dark:text-rose-400 hover:bg-rose-50 rounded-lg transition text-xs font-bold"
+                                                    >
+                                                        🗑️ {t('delete')}
+                                                    </button>
+                                                ) : (
+                                                    <span className="text-slate-400 text-xs">—</span>
+                                                )}
                                             </td>
                                         </tr>
                                     ))}

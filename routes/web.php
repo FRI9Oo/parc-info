@@ -129,26 +129,26 @@ Route::middleware('auth')->group(function () {
     Route::delete('/affectations/{affectation}', [AffectationMaterielController::class, 'destroy'])->middleware('permission:modifier_affectation,gerer_affectations')->name('affectations.destroy');
 
     // Roles & Utilisateurs (Administration)
-    Route::middleware('permission:gerer_structure')->group(function () {
+    Route::middleware('permission:gerer_structure,gerer_roles,voir_roles,gerer_utilisateurs,voir_utilisateurs')->group(function () {
         Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');
-        Route::post('/roles', [RoleController::class, 'store'])->name('roles.store');
-        Route::put('/roles/{role}', [RoleController::class, 'update'])->name('roles.update');
-        Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
+        Route::post('/roles', [RoleController::class, 'store'])->middleware('permission:gerer_roles,gerer_structure')->name('roles.store');
+        Route::put('/roles/{role}', [RoleController::class, 'update'])->middleware('permission:gerer_roles,gerer_structure')->name('roles.update');
+        Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->middleware('permission:gerer_roles,gerer_structure')->name('roles.destroy');
 
         Route::get('/utilisateurs', [UserController::class, 'index'])->name('users.index');
-        Route::post('/utilisateurs', [UserController::class, 'store'])->name('users.store');
-        Route::put('/utilisateurs/{user}', [UserController::class, 'update'])->name('users.update');
-        Route::put('/utilisateurs/{user}/role', [UserController::class, 'updateRole'])->name('users.update-role');
-        Route::put('/utilisateurs/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
-        Route::put('/utilisateurs/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
-        Route::delete('/utilisateurs/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+        Route::post('/utilisateurs', [UserController::class, 'store'])->middleware('permission:gerer_utilisateurs,gerer_structure')->name('users.store');
+        Route::put('/utilisateurs/{user}', [UserController::class, 'update'])->middleware('permission:gerer_utilisateurs,gerer_structure')->name('users.update');
+        Route::put('/utilisateurs/{user}/role', [UserController::class, 'updateRole'])->middleware('permission:gerer_utilisateurs,gerer_structure')->name('users.update-role');
+        Route::put('/utilisateurs/{user}/toggle-status', [UserController::class, 'toggleStatus'])->middleware('permission:gerer_utilisateurs,gerer_structure')->name('users.toggle-status');
+        Route::put('/utilisateurs/{user}/reset-password', [UserController::class, 'resetPassword'])->middleware('permission:gerer_utilisateurs,gerer_structure')->name('users.reset-password');
+        Route::delete('/utilisateurs/{user}', [UserController::class, 'destroy'])->middleware('permission:gerer_utilisateurs,gerer_structure')->name('users.destroy');
     });
 
     // Exports CSV
-    Route::get('/exports/materiels/csv', [\App\Http\Controllers\ExportController::class, 'exportMateriels'])->middleware('permission:voir_materiels,gerer_materiels')->name('exports.materiels.csv');
-    Route::get('/exports/affectations/csv', [\App\Http\Controllers\ExportController::class, 'exportAffectations'])->middleware('permission:voir_affectations,gerer_affectations')->name('exports.affectations.csv');
-    Route::get('/exports/employes/csv', [\App\Http\Controllers\ExportController::class, 'exportEmployes'])->middleware('permission:voir_employes,gerer_employes')->name('exports.employes.csv');
-    Route::get('/exports/audit-logs/csv', [\App\Http\Controllers\ExportController::class, 'exportAuditLogs'])->middleware('permission:voir_audit_logs')->name('exports.audit-logs.csv');
+    Route::get('/exports/materiels/csv', [\App\Http\Controllers\ExportController::class, 'exportMateriels'])->middleware('permission:exporter_donnees,voir_materiels,gerer_materiels')->name('exports.materiels.csv');
+    Route::get('/exports/affectations/csv', [\App\Http\Controllers\ExportController::class, 'exportAffectations'])->middleware('permission:exporter_donnees,voir_affectations,gerer_affectations')->name('exports.affectations.csv');
+    Route::get('/exports/employes/csv', [\App\Http\Controllers\ExportController::class, 'exportEmployes'])->middleware('permission:exporter_donnees,voir_employes,gerer_employes')->name('exports.employes.csv');
+    Route::get('/exports/audit-logs/csv', [\App\Http\Controllers\ExportController::class, 'exportAuditLogs'])->middleware('permission:exporter_donnees,voir_audit_logs')->name('exports.audit-logs.csv');
 
     // Journal d'Audit
     Route::get('/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'index'])
