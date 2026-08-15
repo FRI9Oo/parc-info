@@ -13,6 +13,12 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FournisseurController;
+use App\Http\Controllers\MarqueModeleController;
+use App\Http\Controllers\AchatController;
+use App\Http\Controllers\BordereauMaterielController;
+use App\Http\Controllers\FactureController;
+use App\Http\Controllers\LivraisonStockController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -69,9 +75,49 @@ Route::middleware('auth')->group(function () {
     Route::delete('/categories/{categorie}', [CategorieController::class, 'destroy'])->middleware('permission:supprimer_materiel,gerer_materiels')->name('categories.destroy');
 
     Route::get('/materiels', [MaterielController::class, 'index'])->middleware('permission:voir_materiels,gerer_materiels,creer_materiel,modifier_materiel,supprimer_materiel')->name('materiels.index');
+    Route::get('/materiels/template', [MaterielController::class, 'downloadTemplate'])->middleware('permission:creer_materiel,gerer_materiels')->name('materiels.template');
+    Route::post('/materiels/bulk-import', [MaterielController::class, 'bulkImport'])->middleware('permission:creer_materiel,gerer_materiels')->name('materiels.bulk-import');
     Route::post('/materiels', [MaterielController::class, 'store'])->middleware('permission:creer_materiel,gerer_materiels')->name('materiels.store');
     Route::put('/materiels/{materiel}', [MaterielController::class, 'update'])->middleware('permission:modifier_materiel,gerer_materiels')->name('materiels.update');
     Route::delete('/materiels/{materiel}', [MaterielController::class, 'destroy'])->middleware('permission:supprimer_materiel,gerer_materiels')->name('materiels.destroy');
+
+    // Marques & Modeles
+    Route::get('/marques-modeles', [MarqueModeleController::class, 'index'])->middleware('permission:voir_marques_modeles,gerer_marques_modeles,creer_marque_modele,modifier_marque_modele,supprimer_marque_modele')->name('marques-modeles.index');
+    Route::post('/marques', [MarqueModeleController::class, 'storeMarque'])->middleware('permission:creer_marque_modele,gerer_marques_modeles')->name('marques.store');
+    Route::put('/marques/{marque}', [MarqueModeleController::class, 'updateMarque'])->middleware('permission:modifier_marque_modele,gerer_marques_modeles')->name('marques.update');
+    Route::delete('/marques/{marque}', [MarqueModeleController::class, 'destroyMarque'])->middleware('permission:supprimer_marque_modele,gerer_marques_modeles')->name('marques.destroy');
+    Route::post('/modeles', [MarqueModeleController::class, 'storeModele'])->middleware('permission:creer_marque_modele,gerer_marques_modeles')->name('modeles.store');
+    Route::put('/modeles/{modele}', [MarqueModeleController::class, 'updateModele'])->middleware('permission:modifier_marque_modele,gerer_marques_modeles')->name('modeles.update');
+    Route::delete('/modeles/{modele}', [MarqueModeleController::class, 'destroyModele'])->middleware('permission:supprimer_marque_modele,gerer_marques_modeles')->name('modeles.destroy');
+
+    // Fournisseurs
+    Route::get('/fournisseurs', [FournisseurController::class, 'index'])->middleware('permission:voir_fournisseurs,gerer_fournisseurs,creer_fournisseur,modifier_fournisseur,supprimer_fournisseur')->name('fournisseurs.index');
+    Route::post('/fournisseurs', [FournisseurController::class, 'store'])->middleware('permission:creer_fournisseur,gerer_fournisseurs')->name('fournisseurs.store');
+    Route::put('/fournisseurs/{fournisseur}', [FournisseurController::class, 'update'])->middleware('permission:modifier_fournisseur,gerer_fournisseurs')->name('fournisseurs.update');
+    Route::delete('/fournisseurs/{fournisseur}', [FournisseurController::class, 'destroy'])->middleware('permission:supprimer_fournisseur,gerer_fournisseurs')->name('fournisseurs.destroy');
+
+    // Achats & Commandes
+    Route::get('/achats', [AchatController::class, 'index'])->middleware('permission:voir_achats,gerer_achats,creer_achat,modifier_achat,supprimer_achat')->name('achats.index');
+    Route::post('/achats', [AchatController::class, 'store'])->middleware('permission:creer_achat,gerer_achats')->name('achats.store');
+    Route::get('/achats/{achat}', [AchatController::class, 'show'])->middleware('permission:voir_achats,gerer_achats,creer_achat,modifier_achat,supprimer_achat')->name('achats.show');
+    Route::put('/achats/{achat}', [AchatController::class, 'update'])->middleware('permission:modifier_achat,gerer_achats')->name('achats.update');
+    Route::delete('/achats/{achat}', [AchatController::class, 'destroy'])->middleware('permission:supprimer_achat,gerer_achats')->name('achats.destroy');
+
+    // Bordereau Materiel
+    Route::post('/achats/{achat}/bordereaux', [BordereauMaterielController::class, 'store'])->middleware('permission:creer_achat,modifier_achat,gerer_achats')->name('bordereaux.store');
+    Route::put('/bordereaux/{bordereau}', [BordereauMaterielController::class, 'update'])->middleware('permission:modifier_achat,gerer_achats')->name('bordereaux.update');
+    Route::delete('/bordereaux/{bordereau}', [BordereauMaterielController::class, 'destroy'])->middleware('permission:supprimer_achat,gerer_achats')->name('bordereaux.destroy');
+
+    // Factures
+    Route::get('/factures', [FactureController::class, 'index'])->middleware('permission:voir_factures,gerer_factures,creer_facture,modifier_facture,supprimer_facture')->name('factures.index');
+    Route::post('/factures', [FactureController::class, 'store'])->middleware('permission:creer_facture,gerer_factures')->name('factures.store');
+    Route::put('/factures/{facture}', [FactureController::class, 'update'])->middleware('permission:modifier_facture,gerer_factures')->name('factures.update');
+    Route::delete('/factures/{facture}', [FactureController::class, 'destroy'])->middleware('permission:supprimer_facture,gerer_factures')->name('factures.destroy');
+
+    // Livraisons & Stocks
+    Route::get('/livraisons', [LivraisonStockController::class, 'index'])->middleware('permission:voir_livraisons,gerer_livraisons,creer_livraison,supprimer_livraison')->name('livraisons.index');
+    Route::post('/livraisons', [LivraisonStockController::class, 'store'])->middleware('permission:creer_livraison,gerer_livraisons')->name('livraisons.store');
+    Route::delete('/livraisons/{livraison}', [LivraisonStockController::class, 'destroy'])->middleware('permission:supprimer_livraison,gerer_livraisons')->name('livraisons.destroy');
 
     // Affectations
     Route::get('/affectations', [AffectationMaterielController::class, 'index'])->middleware('permission:voir_affectations,gerer_affectations,creer_affectation,modifier_affectation,imprimer_affectation')->name('affectations.index');

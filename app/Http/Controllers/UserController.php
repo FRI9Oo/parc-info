@@ -16,7 +16,7 @@ class UserController extends Controller
     public function index()
     {
         return Inertia::render('Users/Index', [
-            'users' => User::with(['role', 'employe'])->orderBy('name')->get(),
+            'users' => User::with(['role', 'employe'])->latest()->get(),
             'roles' => Role::orderBy('nom_role')->get(),
             'employes' => Employe::orderBy('nom')->get(),
         ]);
@@ -29,7 +29,9 @@ class UserController extends Controller
             'email' => 'required|string|email|max:255|unique:users,email',
             'password' => ['required', Rules\Password::defaults()],
             'role_id' => 'nullable|exists:roles,id',
-            'employe_id' => 'nullable|exists:employes,id',
+            'employe_id' => 'nullable|exists:employes,id|unique:users,employe_id',
+        ], [
+            'employe_id.unique' => 'Cet employé est déjà rattaché à un autre compte utilisateur.',
         ]);
 
         $u = User::create([
@@ -53,7 +55,9 @@ class UserController extends Controller
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
             'password' => ['nullable', Rules\Password::defaults()],
             'role_id' => 'nullable|exists:roles,id',
-            'employe_id' => 'nullable|exists:employes,id',
+            'employe_id' => 'nullable|exists:employes,id|unique:users,employe_id,' . $user->id,
+        ], [
+            'employe_id.unique' => 'Cet employé est déjà rattaché à un autre compte utilisateur.',
         ]);
 
         $updateData = [

@@ -25,6 +25,9 @@ class RoleController extends Controller
             'description_role' => 'nullable|string|max:255',
             'permission_ids' => 'array',
             'permission_ids.*' => 'exists:permissions,id',
+        ], [
+            'nom_role.required' => 'Le nom du rôle est obligatoire.',
+            'nom_role.unique' => 'Un rôle avec cette désignation existe déjà.',
         ]);
 
         $role = Role::create([
@@ -36,7 +39,7 @@ class RoleController extends Controller
 
         AuditLog::record('Création', 'Rôles', "Création du rôle '{$role->nom_role}' avec " . count($validated['permission_ids'] ?? []) . " permission(s)", $role);
 
-        return redirect()->back();
+        return redirect()->back()->with('success', "Rôle '{$role->nom_role}' créé avec succès.");
     }
 
     public function update(Request $request, Role $role)
@@ -46,6 +49,9 @@ class RoleController extends Controller
             'description_role' => 'nullable|string|max:255',
             'permission_ids' => 'array',
             'permission_ids.*' => 'exists:permissions,id',
+        ], [
+            'nom_role.required' => 'Le nom du rôle est obligatoire.',
+            'nom_role.unique' => 'Un rôle avec cette désignation existe déjà.',
         ]);
 
         $role->update([
@@ -57,7 +63,7 @@ class RoleController extends Controller
 
         AuditLog::record('Modification', 'Rôles', "Mise à jour du rôle '{$role->nom_role}' (Permissions: " . count($validated['permission_ids'] ?? []) . ")", $role);
 
-        return redirect()->back();
+        return redirect()->back()->with('success', "Rôle '{$role->nom_role}' mis à jour avec succès.");
     }
 
     public function destroy(Role $role)
@@ -68,11 +74,12 @@ class RoleController extends Controller
             ]);
         }
 
-        $desc = "Suppression du rôle '{$role->nom_role}'";
+        $nom = $role->nom_role;
+        $desc = "Suppression du rôle '{$nom}'";
         $role->delete();
 
         AuditLog::record('Suppression', 'Rôles', $desc);
 
-        return redirect()->back();
+        return redirect()->back()->with('success', "Rôle '{$nom}' supprimé avec succès.");
     }
 }

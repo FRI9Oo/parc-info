@@ -1,5 +1,6 @@
 import ApplicationLogo from '@/Components/ApplicationLogo';
 import Dropdown from '@/Components/Dropdown';
+import FlashAlert from '@/Components/FlashAlert';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
 import { useLanguage } from '@/Context/LanguageContext';
 import { Link, usePage } from '@inertiajs/react';
@@ -23,8 +24,16 @@ export default function AuthenticatedLayout({ header, children }) {
     const canSeeAffectations = hasPerm('gerer_affectations') || hasPerm('voir_affectations') || hasPerm('creer_affectation') || hasPerm('modifier_affectation') || hasPerm('imprimer_affectation');
     const canSeeAuditLogs = hasPerm('voir_audit_logs');
 
+    // Achats & Stocks Permissions
+    const canSeeFournisseurs = hasPerm('gerer_fournisseurs') || hasPerm('voir_fournisseurs') || hasPerm('creer_fournisseur') || hasPerm('modifier_fournisseur') || hasPerm('supprimer_fournisseur');
+    const canSeeAchats = hasPerm('gerer_achats') || hasPerm('voir_achats') || hasPerm('creer_achat') || hasPerm('modifier_achat') || hasPerm('supprimer_achat');
+    const canSeeFactures = hasPerm('gerer_factures') || hasPerm('voir_factures') || hasPerm('creer_facture') || hasPerm('modifier_facture') || hasPerm('supprimer_facture');
+    const canSeeLivraisons = hasPerm('gerer_livraisons') || hasPerm('voir_livraisons') || hasPerm('creer_livraison') || hasPerm('supprimer_livraison');
+    const canSeeMarquesModeles = hasPerm('gerer_marques_modeles') || hasPerm('voir_marques_modeles') || hasPerm('creer_marque_modele') || hasPerm('modifier_marque_modele') || hasPerm('supprimer_marque_modele');
+
     const showStructureDropdown = canSeeDirections || canSeeDepartements || canSeeDivisions || canSeeServices || canSeeEmployes;
     const showParcDropdown = canSeeMateriels || canSeeAffectations;
+    const showAchatsDropdown = canSeeFournisseurs || canSeeAchats || canSeeFactures || canSeeLivraisons || canSeeMarquesModeles;
     const showAdminDropdown = isAdmin || canSeeAuditLogs;
 
     const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
@@ -33,6 +42,7 @@ export default function AuthenticatedLayout({ header, children }) {
     const isDashboardActive = route().current('dashboard');
     const isStructureActive = route().current('directions.index') || route().current('departements.index') || route().current('divisions.index') || route().current('services.index') || route().current('employes.index');
     const isMaterielsActive = route().current('materiels.index') || route().current('categories.index') || route().current('affectations.index');
+    const isAchatsActive = route().current('achats.*') || route().current('fournisseurs.*') || route().current('factures.*') || route().current('livraisons.*') || route().current('marques-modeles.*');
     const isAdminActive = route().current('audit-logs.index') || route().current('roles.index') || route().current('users.index');
 
     const languages = [
@@ -43,7 +53,9 @@ export default function AuthenticatedLayout({ header, children }) {
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-[#0b0f19] text-slate-900 dark:text-slate-100 transition-colors duration-200">
-            
+            {/* Global Flash & Error Alerts */}
+            <FlashAlert />
+
             {/* Sticky Navigation Header */}
             <nav className="sticky top-0 z-50 glass-nav shadow-md border-b border-slate-200/80 dark:border-slate-800/80">
                 {/* Brand Color Palette Tri-Bar Accent */}
@@ -138,6 +150,32 @@ export default function AuthenticatedLayout({ header, children }) {
                                             {canSeeAffectations && (
                                                 <Dropdown.Link href={route('affectations.index')}>{t('affectations')}</Dropdown.Link>
                                             )}
+                                        </Dropdown.Content>
+                                    </Dropdown>
+                                )}
+
+                                {showAchatsDropdown && (
+                                    <Dropdown>
+                                        <Dropdown.Trigger>
+                                            <button
+                                                type="button"
+                                                className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-extrabold rounded-xl transition-all ${
+                                                    isAchatsActive
+                                                        ? 'bg-[#6366f1] text-white shadow-md shadow-[#6366f1]/30 scale-105'
+                                                        : 'text-slate-700 dark:text-slate-200 hover:text-[#6366f1] hover:bg-indigo-50 dark:hover:bg-slate-800'
+                                                }`}
+                                            >
+                                                <span>🛒</span>
+                                                <span>{t('achats_stocks')}</span>
+                                                <span className="text-[10px] opacity-80">▾</span>
+                                            </button>
+                                        </Dropdown.Trigger>
+                                        <Dropdown.Content align="left" width="48">
+                                            {canSeeFournisseurs && <Dropdown.Link href={route('fournisseurs.index')}>{t('fournisseurs')}</Dropdown.Link>}
+                                            {canSeeAchats && <Dropdown.Link href={route('achats.index')}>{t('achats')}</Dropdown.Link>}
+                                            {canSeeFactures && <Dropdown.Link href={route('factures.index')}>{t('factures')}</Dropdown.Link>}
+                                            {canSeeLivraisons && <Dropdown.Link href={route('livraisons.index')}>{t('livraisons')}</Dropdown.Link>}
+                                            {canSeeMarquesModeles && <Dropdown.Link href={route('marques-modeles.index')}>{t('marques_modeles')}</Dropdown.Link>}
                                         </Dropdown.Content>
                                     </Dropdown>
                                 )}
@@ -296,6 +334,17 @@ export default function AuthenticatedLayout({ header, children }) {
                                 {canSeeAffectations && (
                                     <ResponsiveNavLink href={route('affectations.index')} active={route().current('affectations.index')}>{t('affectations')}</ResponsiveNavLink>
                                 )}
+                            </div>
+                        )}
+
+                        {showAchatsDropdown && (
+                            <div className="border-t border-slate-100 dark:border-slate-800 pt-2 pb-1">
+                                <div className="px-4 text-xs font-bold text-slate-400 uppercase tracking-wider">🛒 {t('achats_stocks')}</div>
+                                {canSeeFournisseurs && <ResponsiveNavLink href={route('fournisseurs.index')} active={route().current('fournisseurs.index')}>{t('fournisseurs')}</ResponsiveNavLink>}
+                                {canSeeAchats && <ResponsiveNavLink href={route('achats.index')} active={route().current('achats.*')}>{t('achats')}</ResponsiveNavLink>}
+                                {canSeeFactures && <ResponsiveNavLink href={route('factures.index')} active={route().current('factures.index')}>{t('factures')}</ResponsiveNavLink>}
+                                {canSeeLivraisons && <ResponsiveNavLink href={route('livraisons.index')} active={route().current('livraisons.index')}>{t('livraisons')}</ResponsiveNavLink>}
+                                {canSeeMarquesModeles && <ResponsiveNavLink href={route('marques-modeles.index')} active={route().current('marques-modeles.index')}>{t('marques_modeles')}</ResponsiveNavLink>}
                             </div>
                         )}
 

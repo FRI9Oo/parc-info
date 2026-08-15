@@ -1,10 +1,14 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import Modal from '@/Components/Modal';
+import Pagination from '@/Components/Pagination';
+import usePagination from '@/Hooks/usePagination';
+import { useLanguage } from '@/Context/LanguageContext';
 import { Head, router, usePage } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 
 export default function Index({ users, roles, employes }) {
     const { auth, errors: pageErrors } = usePage().props;
+    const { t } = useLanguage();
     const currentUser = auth.user;
 
     // ---------- Search & Filter State ----------
@@ -40,6 +44,17 @@ export default function Index({ users, roles, employes }) {
             return true;
         });
     }, [users, searchQuery, roleFilter, statusFilter]);
+
+    // ---------- Pagination ----------
+    const {
+        currentPage,
+        setCurrentPage,
+        pageSize,
+        setPageSize,
+        totalItems,
+        totalPages,
+        paginatedItems: paginatedUsers,
+    } = usePagination(filteredUsers, 10, [searchQuery, roleFilter, statusFilter]);
 
     // ---------- Form Add User ----------
     const [addData, setAddData] = useState({
@@ -139,7 +154,7 @@ export default function Index({ users, roles, employes }) {
 
     return (
         <AuthenticatedLayout>
-            <Head title="Gestion des Utilisateurs" />
+            <Head title={t('users_title')} />
 
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
@@ -156,86 +171,94 @@ export default function Index({ users, roles, employes }) {
                     )}
 
                     {/* Card: Ajouter un utilisateur */}
-                    <div className="bg-white shadow-sm sm:rounded-lg p-6">
-                        <h1 className="text-xl font-semibold mb-4 text-slate-800">Ajouter un utilisateur</h1>
+                    <div className="bg-white shadow-sm sm:rounded-2xl border border-slate-200 p-6">
+                        <h2 className="text-base font-extrabold mb-4 text-slate-800 flex items-center gap-2">
+                            <span>➕</span> {t('users_add_new')}
+                        </h2>
 
                         <form onSubmit={submitAdd} className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
-                                <label className="block text-xs font-semibold text-slate-700 mb-1">Nom complet *</label>
+                                <label className="block text-xs font-bold text-slate-700 mb-1">{t('users_name')} <span className="text-rose-500">*</span></label>
                                 <input
                                     type="text"
                                     placeholder="ex: Youssef El Alami"
                                     value={addData.name}
                                     onChange={(e) => setAddData({ ...addData, name: e.target.value })}
-                                    className="border rounded-lg px-3 py-2 text-sm w-full focus:ring-1 focus:ring-[#11508f]"
+                                    className={`border rounded-xl px-3.5 py-2.5 text-sm w-full transition ${
+                                        pageErrors?.name ? 'border-rose-500 ring-2 ring-rose-400 bg-rose-50/40 text-rose-900' : 'border-slate-200 focus:ring-2 focus:ring-[#11508f]'
+                                    }`}
                                     required
                                 />
-                                {pageErrors?.name && <span className="text-red-600 text-xs">{pageErrors.name}</span>}
+                                {pageErrors?.name && <span className="text-rose-600 text-xs font-semibold mt-1 flex items-center gap-1"><span>⚠️</span> {pageErrors.name}</span>}
                             </div>
 
                             <div>
-                                <label className="block text-xs font-semibold text-slate-700 mb-1">Adresse Email *</label>
+                                <label className="block text-xs font-bold text-slate-700 mb-1">{t('users_email')} <span className="text-rose-500">*</span></label>
                                 <input
                                     type="email"
                                     placeholder="ex: y.elalami@example.com"
                                     value={addData.email}
                                     onChange={(e) => setAddData({ ...addData, email: e.target.value })}
-                                    className="border rounded-lg px-3 py-2 text-sm w-full focus:ring-1 focus:ring-[#11508f]"
+                                    className={`border rounded-xl px-3.5 py-2.5 text-sm w-full transition ${
+                                        pageErrors?.email ? 'border-rose-500 ring-2 ring-rose-400 bg-rose-50/40 text-rose-900' : 'border-slate-200 focus:ring-2 focus:ring-[#11508f]'
+                                    }`}
                                     required
                                 />
-                                {pageErrors?.email && <span className="text-red-600 text-xs">{pageErrors.email}</span>}
+                                {pageErrors?.email && <span className="text-rose-600 text-xs font-semibold mt-1 flex items-center gap-1"><span>⚠️</span> {pageErrors.email}</span>}
                             </div>
 
                             <div>
-                                <label className="block text-xs font-semibold text-slate-700 mb-1">Mot de passe *</label>
+                                <label className="block text-xs font-bold text-slate-700 mb-1">{t('users_password')} <span className="text-rose-500">*</span></label>
                                 <input
                                     type="password"
                                     placeholder="••••••••"
                                     value={addData.password}
                                     onChange={(e) => setAddData({ ...addData, password: e.target.value })}
-                                    className="border rounded-lg px-3 py-2 text-sm w-full focus:ring-1 focus:ring-[#11508f]"
+                                    className={`border rounded-xl px-3.5 py-2.5 text-sm w-full transition ${
+                                        pageErrors?.password ? 'border-rose-500 ring-2 ring-rose-400 bg-rose-50/40 text-rose-900' : 'border-slate-200 focus:ring-2 focus:ring-[#11508f]'
+                                    }`}
                                     required
                                 />
-                                {pageErrors?.password && <span className="text-red-600 text-xs">{pageErrors.password}</span>}
+                                {pageErrors?.password && <span className="text-rose-600 text-xs font-semibold mt-1 flex items-center gap-1"><span>⚠️</span> {pageErrors.password}</span>}
                             </div>
 
                             <div>
-                                <label className="block text-xs font-semibold text-slate-700 mb-1">Rôle Système</label>
+                                <label className="block text-xs font-bold text-slate-700 mb-1">{t('roles')}</label>
                                 <select
                                     value={addData.role_id}
                                     onChange={(e) => setAddData({ ...addData, role_id: e.target.value })}
-                                    className="border rounded-lg px-3 py-2 text-sm w-full bg-white focus:ring-1 focus:ring-[#11508f]"
+                                    className="border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm w-full bg-white focus:ring-2 focus:ring-[#11508f]"
                                 >
-                                    <option value="">-- Aucun rôle --</option>
+                                    <option value="">-- {t('users_no_role')} --</option>
                                     {roles.map((r) => (
-                                        <option key={r.id} value={r.id}>{r.nom_role}</option>
+                                        <option key={r.id} value={r.id}>🛡️ {r.nom_role}</option>
                                     ))}
                                 </select>
                             </div>
 
                             <div className="md:col-span-2">
-                                <label className="block text-xs font-semibold text-slate-700 mb-1">Employé Associé (Optionnel)</label>
+                                <label className="block text-xs font-bold text-slate-700 mb-1">{t('employes')} ({t('optional')})</label>
                                 <select
                                     value={addData.employe_id}
                                     onChange={(e) => setAddData({ ...addData, employe_id: e.target.value })}
-                                    className="border rounded-lg px-3 py-2 text-sm w-full bg-white focus:ring-1 focus:ring-[#11508f]"
+                                    className="border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm w-full bg-white focus:ring-2 focus:ring-[#11508f]"
                                 >
-                                    <option value="">-- Aucun employé associé --</option>
+                                    <option value="">-- {t('none')} --</option>
                                     {employes.map((e) => (
                                         <option key={e.id} value={e.id}>
-                                            {e.nom} {e.prenom} (Matricule: {e.matricule})
+                                            👤 {e.nom} {e.prenom} ({e.matricule})
                                         </option>
                                     ))}
                                 </select>
                             </div>
 
-                            <div className="md:col-span-3 flex justify-end pt-2">
+                            <div className="md:col-span-3 flex justify-end pt-1">
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="bg-[#11508f] text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-[#0d3d6e] transition disabled:opacity-50"
+                                    className="bg-[#11508f] text-white px-6 py-2.5 rounded-xl text-xs font-extrabold hover:bg-[#0d3d6e] transition shadow-md shadow-[#11508f]/20 disabled:opacity-50"
                                 >
-                                    {isSubmitting ? 'Création...' : 'Créer l\'utilisateur'}
+                                    {t('save')}
                                 </button>
                             </div>
                         </form>
@@ -244,12 +267,12 @@ export default function Index({ users, roles, employes }) {
                     {/* Card: Liste des utilisateurs */}
                     <div className="lux-card p-6">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                            <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">Gestion des Compte Utilisateurs ({filteredUsers.length})</h1>
+                            <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">{t('users_title')} ({filteredUsers.length})</h1>
 
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 flex-1 md:max-w-2xl">
                                 <input
                                     type="text"
-                                    placeholder="Rechercher (Nom, Email, Rôle...)"
+                                    placeholder={t('search_placeholder')}
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     className="border border-slate-200 rounded-xl px-3.5 py-2 text-sm w-full focus:ring-1 focus:ring-[#11508f] bg-slate-50/50"
@@ -260,8 +283,8 @@ export default function Index({ users, roles, employes }) {
                                     onChange={(e) => setRoleFilter(e.target.value)}
                                     className="border border-slate-200 rounded-xl px-3.5 py-2 text-sm w-full bg-white focus:ring-1 focus:ring-[#11508f]"
                                 >
-                                    <option value="all">Tous les rôles</option>
-                                    <option value="none">Sans rôle assigné</option>
+                                    <option value="all">{t('all')} {t('roles')}</option>
+                                    <option value="none">{t('users_no_role')}</option>
                                     {roles.map((r) => (
                                         <option key={r.id} value={r.id}>{r.nom_role}</option>
                                     ))}
@@ -272,9 +295,9 @@ export default function Index({ users, roles, employes }) {
                                     onChange={(e) => setStatusFilter(e.target.value)}
                                     className="border rounded-lg px-3 py-1.5 text-sm w-full bg-white"
                                 >
-                                    <option value="all">Tous les statuts</option>
-                                    <option value="active">Actifs seulement</option>
-                                    <option value="inactive">Désactivés seulement</option>
+                                    <option value="all">{t('all')}</option>
+                                    <option value="active">{t('active')}</option>
+                                    <option value="inactive">{t('inactive')}</option>
                                 </select>
                             </div>
                         </div>
@@ -283,32 +306,32 @@ export default function Index({ users, roles, employes }) {
                             <table className="w-full text-left border-collapse">
                                 <thead>
                                     <tr className="border-b bg-slate-50 text-xs text-slate-600 font-semibold uppercase tracking-wider">
-                                        <th className="py-3 px-3">Nom</th>
-                                        <th className="py-3 px-3">Email</th>
-                                        <th className="py-3 px-3">Statut</th>
-                                        <th className="py-3 px-3">Employé Fiche</th>
-                                        <th className="py-3 px-3">Rôle Assigné</th>
-                                        <th className="py-3 px-3 text-right">Actions</th>
+                                        <th className="py-3 px-3">{t('users_name')}</th>
+                                        <th className="py-3 px-3">{t('users_email')}</th>
+                                        <th className="py-3 px-3">{t('users_status')}</th>
+                                        <th className="py-3 px-3">{t('employes')}</th>
+                                        <th className="py-3 px-3">{t('roles')}</th>
+                                        <th className="py-3 px-3 text-right">{t('actions')}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="text-sm divide-y divide-slate-100">
-                                    {filteredUsers.map((u) => (
+                                    {paginatedUsers.map((u) => (
                                         <tr key={u.id} className="hover:bg-slate-50 transition">
                                             <td className="py-3 px-3 font-medium text-slate-900 whitespace-nowrap">
                                                 {u.name}
                                                 {u.id === currentUser.id && (
-                                                    <span className="ms-2 text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded border border-indigo-200">Vous</span>
+                                                    <span className="ms-2 text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded border border-indigo-200">{t('you')}</span>
                                                 )}
                                             </td>
                                             <td className="py-3 px-3 whitespace-nowrap text-slate-600">{u.email}</td>
                                             <td className="py-3 px-3 whitespace-nowrap">
                                                 {u.is_active ? (
                                                     <span className="inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200">
-                                                        Actif
+                                                        {t('active')}
                                                     </span>
                                                 ) : (
                                                     <span className="inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">
-                                                        Désactivé
+                                                        {t('inactive')}
                                                     </span>
                                                 )}
                                             </td>
@@ -327,7 +350,7 @@ export default function Index({ users, roles, employes }) {
                                                     onChange={(e) => changeRole(u.id, e.target.value)}
                                                     className="border rounded-lg px-2 py-1 text-xs bg-white focus:ring-1 focus:ring-[#11508f]"
                                                 >
-                                                    <option value="">-- Aucun rôle --</option>
+                                                    <option value="">-- {t('users_no_role')} --</option>
                                                     {roles.map((r) => (
                                                         <option key={r.id} value={r.id}>{r.nom_role}</option>
                                                     ))}
@@ -337,7 +360,7 @@ export default function Index({ users, roles, employes }) {
                                                 <div className="flex items-center justify-end gap-1.5">
                                                     <button
                                                         onClick={() => openEdit(u)}
-                                                        title="Modifier le compte"
+                                                        title={t('edit')}
                                                         className="p-1.5 rounded-lg text-blue-600 hover:text-blue-800 hover:bg-blue-50 transition"
                                                     >
                                                         ✏️
@@ -345,7 +368,7 @@ export default function Index({ users, roles, employes }) {
 
                                                     <button
                                                         onClick={() => openReset(u)}
-                                                        title="Réinitialiser le mot de passe"
+                                                        title={t('users_reset_password')}
                                                         className="p-1.5 rounded-lg text-purple-600 hover:text-purple-800 hover:bg-purple-50 transition"
                                                     >
                                                         🔑
@@ -355,7 +378,7 @@ export default function Index({ users, roles, employes }) {
                                                         <>
                                                             <button
                                                                 onClick={() => toggleStatus(u)}
-                                                                title={u.is_active ? 'Désactiver le compte' : 'Activer le compte'}
+                                                                title={u.is_active ? t('inactive') : t('active')}
                                                                 className={`p-1.5 rounded-lg transition ${u.is_active ? 'text-amber-600 hover:bg-amber-50' : 'text-emerald-600 hover:bg-emerald-50'}`}
                                                             >
                                                                 {u.is_active ? '🚫' : '✅'}
@@ -363,7 +386,7 @@ export default function Index({ users, roles, employes }) {
 
                                                             <button
                                                                 onClick={() => destroyUser(u)}
-                                                                title="Supprimer l'utilisateur"
+                                                                title={t('delete')}
                                                                 className="p-1.5 rounded-lg text-red-600 hover:text-red-800 hover:bg-red-50 transition"
                                                             >
                                                                 🗑️
@@ -377,6 +400,16 @@ export default function Index({ users, roles, employes }) {
                                 </tbody>
                             </table>
                         </div>
+
+                        {/* Pagination */}
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            totalItems={totalItems}
+                            pageSize={pageSize}
+                            onPageChange={setCurrentPage}
+                            onPageSizeChange={setPageSize}
+                        />
                     </div>
                 </div>
             </div>
@@ -385,10 +418,10 @@ export default function Index({ users, roles, employes }) {
             <Modal show={!!editState} onClose={() => setEditState(null)} maxWidth="md">
                 {editState && (
                     <form onSubmit={submitEdit} className="p-6 space-y-4">
-                        <h2 className="text-lg font-bold text-slate-800 border-b pb-2">Éditer l'utilisateur</h2>
+                        <h2 className="text-lg font-bold text-slate-800 border-b pb-2">{t('users_edit', { name: editState.name })}</h2>
 
                         <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1">Nom complet *</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">{t('users_name')} *</label>
                             <input
                                 type="text"
                                 value={editState.name}
@@ -399,7 +432,7 @@ export default function Index({ users, roles, employes }) {
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1">Adresse Email *</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">{t('users_email')} *</label>
                             <input
                                 type="email"
                                 value={editState.email}
@@ -410,13 +443,13 @@ export default function Index({ users, roles, employes }) {
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1">Rôle Système</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">{t('roles')}</label>
                             <select
                                 value={editState.role_id}
                                 onChange={(e) => setEditState({ ...editState, role_id: e.target.value })}
                                 className="border rounded-lg px-3 py-2 text-sm w-full bg-white focus:ring-1 focus:ring-[#11508f]"
                             >
-                                <option value="">-- Aucun rôle --</option>
+                                <option value="">-- {t('users_no_role')} --</option>
                                 {roles.map((r) => (
                                     <option key={r.id} value={r.id}>{r.nom_role}</option>
                                 ))}
@@ -424,13 +457,13 @@ export default function Index({ users, roles, employes }) {
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1">Employé Associé</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">{t('employes')}</label>
                             <select
                                 value={editState.employe_id}
                                 onChange={(e) => setEditState({ ...editState, employe_id: e.target.value })}
                                 className="border rounded-lg px-3 py-2 text-sm w-full bg-white focus:ring-1 focus:ring-[#11508f]"
                             >
-                                <option value="">-- Aucun employé associé --</option>
+                                <option value="">-- {t('none')} --</option>
                                 {employes.map((e) => (
                                     <option key={e.id} value={e.id}>
                                         {e.nom} {e.prenom} ({e.matricule})
@@ -445,13 +478,13 @@ export default function Index({ users, roles, employes }) {
                                 onClick={() => setEditState(null)}
                                 className="text-slate-600 text-sm font-medium px-4 py-2 hover:text-slate-900"
                             >
-                                Annuler
+                                {t('cancel')}
                             </button>
                             <button
                                 type="submit"
                                 className="bg-[#11508f] text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-[#0d3d6e] transition"
                             >
-                                Enregistrer
+                                {t('save')}
                             </button>
                         </div>
                     </form>
@@ -463,11 +496,11 @@ export default function Index({ users, roles, employes }) {
                 {resetState && (
                     <form onSubmit={submitReset} className="p-6 space-y-4">
                         <h2 className="text-lg font-bold text-slate-800 border-b pb-2">
-                            Réinitialiser le mot de passe : {resetState.name}
+                            {t('users_reset_password')} : {resetState.name}
                         </h2>
 
                         <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1">Nouveau mot de passe *</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">{t('users_new_password')} *</label>
                             <input
                                 type="password"
                                 placeholder="••••••••"
@@ -484,13 +517,13 @@ export default function Index({ users, roles, employes }) {
                                 onClick={() => setResetState(null)}
                                 className="text-slate-600 text-sm font-medium px-4 py-2 hover:text-slate-900"
                             >
-                                Annuler
+                                {t('cancel')}
                             </button>
                             <button
                                 type="submit"
                                 className="bg-purple-700 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-purple-800 transition"
                             >
-                                Réinitialiser
+                                {t('users_reset_password')}
                             </button>
                         </div>
                     </form>

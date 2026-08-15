@@ -44,6 +44,14 @@ class AffectationMaterielController extends Controller
             ]);
         }
 
+        $emp = Employe::with('service.division.departement.direction')->find($validated['employe_id']);
+        if ($emp && $emp->service) {
+            $validated['service_id'] = $emp->service_id;
+            $validated['division_id'] = $emp->service->division_id ?? null;
+            $validated['departement_id'] = $emp->service->division->departement_id ?? null;
+            $validated['direction_id'] = $emp->service->division->departement->direction_id ?? null;
+        }
+
         $aff = AffectationMateriel::create($validated);
         $aff->load(['employe', 'materiel']);
 
@@ -80,6 +88,14 @@ class AffectationMaterielController extends Controller
             return redirect()->back()->withErrors([
                 'materiel_id' => 'Ce matériel est déjà en possession d\'un autre employé sur cette période.',
             ]);
+        }
+
+        $emp = Employe::with('service.division.departement.direction')->find($validated['employe_id']);
+        if ($emp && $emp->service) {
+            $validated['service_id'] = $emp->service_id;
+            $validated['division_id'] = $emp->service->division_id ?? null;
+            $validated['departement_id'] = $emp->service->division->departement_id ?? null;
+            $validated['direction_id'] = $emp->service->division->departement->direction_id ?? null;
         }
 
         $affectation->update($validated);

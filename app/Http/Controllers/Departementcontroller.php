@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AuditLog;
 use App\Models\Departement;
 use App\Models\Direction;
 use Illuminate\Http\Request;
@@ -12,7 +13,7 @@ class DepartementController extends Controller
     public function index()
     {
         return Inertia::render('Departements/Index', [
-            'departements' => Departement::with('direction')->withCount('divisions')->get(),
+            'departements' => Departement::with('direction')->withCount('divisions')->latest()->get(),
             'directions' => Direction::all(),
         ]);
     }
@@ -20,25 +21,39 @@ class DepartementController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'nom_departement' => 'required|string|max:255',
+            'nom_departement' => 'required|string|max:255|unique:departements,nom_departement',
             'direction_id' => 'required|exists:directions,id',
+        ], [
+            'nom_departement.required' => 'Le nom du département est obligatoire.',
+            'nom_departement.unique' => 'Un département avec ce nom existe déjà dans l\'organisation.',
+            'direction_id.required' => 'Veuillez sélectionner une direction de rattachement.',
         ]);
 
-        Departement::create($validated);
+        $dep = Departement::create($validated);
+        $dep->load('direction');
 
-        return redirect()->back();
+        AuditLog::record('Création', 'Structure', "Ajout du département '{$dep->nom_departement}' (Direction: {$dep->direction?->nom_direction})", $dep);
+
+        return redirect()->back()->with('success', "Département '{$dep->nom_departement}' créé avec succès.");
     }
 
     public function update(Request $request, Departement $departement)
     {
         $validated = $request->validate([
-            'nom_departement' => 'required|string|max:255',
+            'nom_departement' => 'required|string|max:255|unique:departements,nom_departement,' . $departement->id,
             'direction_id' => 'required|exists:directions,id',
+        ], [
+            'nom_departement.required' => 'Le nom du département est obligatoire.',
+            'nom_departement.unique' => 'Un département avec ce nom existe déjà dans l\'organisation.',
+            'direction_id.required' => 'Veuillez sélectionner une direction de rattachement.',
         ]);
 
         $departement->update($validated);
+        $departement->load('direction');
 
-        return redirect()->back();
+        AuditLog::record('Modification', 'Structure', "Mise à jour du département '{$departement->nom_departement}'", $departement);
+
+        return redirect()->back()->with('success', "Département '{$departement->nom_departement}' mis à jour avec succès.");
     }
 
     public function destroy(Departement $departement)
@@ -49,8 +64,11 @@ class DepartementController extends Controller
             ]);
         }
 
+        $nom = $departement->nom_departement;
         $departement->delete();
 
-        return redirect()->back();
+        AuditLog::record('Suppression', 'Structure', "Suppression du département '{$nom}'");
+
+        return redirect()->back()->with('success', "Département '{$nom}' supprimé avec succès.");
     }
-}
+}

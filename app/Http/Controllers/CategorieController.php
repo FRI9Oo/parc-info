@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AuditLog;
 use App\Models\Categorie;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -11,30 +12,40 @@ class CategorieController extends Controller
     public function index()
     {
         return Inertia::render('Categories/Index', [
-            'categories' => Categorie::withCount('materiels')->get(),
+            'categories' => Categorie::withCount('materiels')->latest()->get(),
         ]);
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'nom_categorie' => 'required|string|max:255',
+            'nom_categorie' => 'required|string|max:255|unique:categories,nom_categorie',
+        ], [
+            'nom_categorie.required' => 'Le nom de la catégorie est obligatoire.',
+            'nom_categorie.unique' => 'Une catégorie portant ce nom existe déjà.',
         ]);
 
-        Categorie::create($validated);
+        $cat = Categorie::create($validated);
 
-        return redirect()->back();
+        AuditLog::record('Création', 'Catégories', "Ajout de la catégorie '{$cat->nom_categorie}'", $cat);
+
+        return redirect()->back()->with('success', "Catégorie '{$cat->nom_categorie}' créée avec succès.");
     }
 
     public function update(Request $request, Categorie $categorie)
     {
         $validated = $request->validate([
-            'nom_categorie' => 'required|string|max:255',
+            'nom_categorie' => 'required|string|max:255|unique:categories,nom_categorie,' . $categorie->id,
+        ], [
+            'nom_categorie.required' => 'Le nom de la catégorie est obligatoire.',
+            'nom_categorie.unique' => 'Une catégorie portant ce nom existe déjà.',
         ]);
 
         $categorie->update($validated);
 
-        return redirect()->back();
+        AuditLog::record('Modification', 'Catégories', "Mise à jour de la catégorie '{$categorie->nom_categorie}'", $categorie);
+
+        return redirect()->back()->with('success', "Catégorie '{$categorie->nom_categorie}' mise à jour avec succès.");
     }
 
     public function destroy(Categorie $categorie)
@@ -45,8 +56,11 @@ class CategorieController extends Controller
             ]);
         }
 
+        $nom = $categorie->nom_categorie;
         $categorie->delete();
 
-        return redirect()->back();
+        AuditLog::record('Suppression', 'Catégories', "Suppression de la catégorie '{$nom}'");
+
+        return redirect()->back()->with('success', "Catégorie '{$nom}' supprimée avec succès.");
     }
 }

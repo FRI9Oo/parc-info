@@ -100,6 +100,35 @@ class User extends Authenticatable
             'modifier_service' => ['gerer_services', 'modifier_structure', 'gerer_structure'],
             'supprimer_service' => ['gerer_services', 'supprimer_structure', 'gerer_structure'],
             'gerer_services' => ['gerer_structure'],
+
+            // Fournisseurs
+            'voir_fournisseurs' => 'gerer_fournisseurs',
+            'creer_fournisseur' => 'gerer_fournisseurs',
+            'modifier_fournisseur' => 'gerer_fournisseurs',
+            'supprimer_fournisseur' => 'gerer_fournisseurs',
+
+            // Achats & Marchés
+            'voir_achats' => 'gerer_achats',
+            'creer_achat' => 'gerer_achats',
+            'modifier_achat' => 'gerer_achats',
+            'supprimer_achat' => 'gerer_achats',
+
+            // Factures
+            'voir_factures' => 'gerer_factures',
+            'creer_facture' => 'gerer_factures',
+            'modifier_facture' => 'gerer_factures',
+            'supprimer_facture' => 'gerer_factures',
+
+            // Livraisons & Stocks
+            'voir_livraisons' => 'gerer_livraisons',
+            'creer_livraison' => 'gerer_livraisons',
+            'supprimer_livraison' => 'gerer_livraisons',
+
+            // Marques & Modèles
+            'voir_marques_modeles' => 'gerer_marques_modeles',
+            'creer_marque_modele' => 'gerer_marques_modeles',
+            'modifier_marque_modele' => 'gerer_marques_modeles',
+            'supprimer_marque_modele' => 'gerer_marques_modeles',
         ];
 
         if (isset($masterMapping[$permissionName])) {

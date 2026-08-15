@@ -1,12 +1,16 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import Modal from '@/Components/Modal';
 import Dropdown from '@/Components/Dropdown';
+import Pagination from '@/Components/Pagination';
+import usePagination from '@/Hooks/usePagination';
+import { useLanguage } from '@/Context/LanguageContext';
 import { Head, router, usePage } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 
 export default function Index({ affectations, employes, materiels }) {
     const { auth = {}, errors: pageErrors } = usePage().props;
     const { permissions = [], isAdmin = false } = auth;
+    const { t } = useLanguage();
 
     const canCreate = isAdmin || permissions.includes('gerer_affectations') || permissions.includes('creer_affectation');
     const canEdit = isAdmin || permissions.includes('gerer_affectations') || permissions.includes('modifier_affectation');
@@ -25,6 +29,7 @@ export default function Index({ affectations, employes, materiels }) {
         if (urlParams.get('filter') === 'prolonge') return 'prolonge';
         return 'all';
     });
+    const [prolongeMonths, setProlongeMonths] = useState(() => Number(urlParams.get('months')) || 6);
 
     const filteredAffectations = useMemo(() => {
         return affectations.filter((a) => {
@@ -33,9 +38,9 @@ export default function Index({ affectations, employes, materiels }) {
             if (etatFilter === 'prolonge') {
                 if (a.etat !== 'Affecté') return false;
                 const startDate = new Date(a.date_affectation);
-                const sixMonthsAgo = new Date();
-                sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-                if (startDate > sixMonthsAgo) return false;
+                const thresholdDate = new Date();
+                thresholdDate.setMonth(thresholdDate.getMonth() - prolongeMonths);
+                if (startDate > thresholdDate) return false;
             }
 
             if (searchQuery.trim()) {
@@ -56,7 +61,18 @@ export default function Index({ affectations, employes, materiels }) {
 
             return true;
         });
-    }, [affectations, searchQuery, etatFilter]);
+    }, [affectations, searchQuery, etatFilter, prolongeMonths]);
+
+    // ---------- Pagination ----------
+    const {
+        currentPage,
+        setCurrentPage,
+        pageSize,
+        setPageSize,
+        totalItems,
+        totalPages,
+        paginatedItems: paginatedAffectations,
+    } = usePagination(filteredAffectations, 10, [searchQuery, etatFilter, prolongeMonths]);
 
     const hasOverlap = (materielId, start, end, excludeId = null) => {
         const newStart = start;
@@ -244,7 +260,7 @@ export default function Index({ affectations, employes, materiels }) {
 
     return (
         <AuthenticatedLayout>
-            <Head title="Affectations" />
+            <Head title={t('affectations_title')} />
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     {pageErrors?.delete && (
@@ -262,66 +278,68 @@ export default function Index({ affectations, employes, materiels }) {
 
                     {/* Ajouter une affectation */}
                     {canCreate && (
-                        <div className="bg-white shadow-sm sm:rounded-lg p-6 mb-6">
-                            <h1 className="text-xl font-semibold mb-4">Affecter un matériel</h1>
+                        <div className="bg-white shadow-sm sm:rounded-2xl border border-slate-200 p-6 mb-6">
+                            <h2 className="text-base font-extrabold mb-4 text-slate-800 flex items-center gap-2">
+                                <span>➕</span> {t('affectations_new')}
+                            </h2>
                             <form onSubmit={submitAdd} className="grid grid-cols-1 md:grid-cols-4 gap-3">
                                 <input
                                     type="date"
                                     value={addData.date_affectation}
                                     onChange={(e) => setAddData({ ...addData, date_affectation: e.target.value })}
-                                    className="border rounded px-3 py-2"
+                                    className="border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm"
                                 />
                                 <input
                                     type="text"
-                                    placeholder="Matricule employé"
+                                    placeholder={t('employes_matricule')}
                                     value={addData.matricule}
                                     onChange={(e) => setAddData({ ...addData, matricule: e.target.value })}
-                                    className="border rounded px-3 py-2"
+                                    className="border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm"
                                 />
                                 <select
                                     value={addData.search_type}
                                     onChange={(e) => setAddData({ ...addData, search_type: e.target.value, search_value: '' })}
-                                    className="border rounded px-3 py-2"
+                                    className="border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-white"
                                 >
-                                    <option value="serie">Rechercher par N° Série</option>
-                                    <option value="inventaire">Rechercher par N° Inventaire</option>
+                                    <option value="serie">{t('materiels_sn')}</option>
+                                    <option value="inventaire">{t('materiels_inv')}</option>
                                 </select>
                                 <input
                                     type="text"
-                                    placeholder={addData.search_type === 'serie' ? 'N° Série' : 'N° Inventaire'}
+                                    placeholder={addData.search_type === 'serie' ? t('materiels_sn') : t('materiels_inv')}
                                     value={addData.search_value}
                                     onChange={(e) => setAddData({ ...addData, search_value: e.target.value })}
-                                    className="border rounded px-3 py-2"
+                                    className="border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm"
                                 />
 
                                 <div className="md:col-span-4 grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                                    <div className={`px-3 py-2 rounded border ${matchedEmploye ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
+                                    <div className={`px-3.5 py-2.5 rounded-xl border text-xs font-semibold ${matchedEmploye ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
                                         {matchedEmploye
-                                            ? `Employé trouvé : ${matchedEmploye.nom} ${matchedEmploye.prenom} [Service : ${matchedEmploye.service?.nom_service ?? 'Non attribué'}]`
+                                            ? `✓ ${t('employes')} : ${matchedEmploye.nom} ${matchedEmploye.prenom} [${matchedEmploye.service?.nom_service ?? t('unattached')}]`
                                             : addData.matricule
-                                                ? 'Aucun employé avec ce matricule'
-                                                : 'En attente de matricule...'}
+                                                ? '⚠️ Aucun employé trouvé'
+                                                : '⏳ ' + t('affectations_select_beneficiary')}
                                     </div>
-                                    <div className={`px-3 py-2 rounded border ${matchedMateriel && !matchedMateriel.unavailable ? 'bg-green-50 border-green-200'
-                                            : matchedMateriel?.unavailable ? 'bg-red-50 border-red-200'
-                                                : 'bg-gray-50 border-gray-200'
+                                    <div className={`px-3.5 py-2.5 rounded-xl border text-xs font-semibold ${matchedMateriel && !matchedMateriel.unavailable ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                                            : matchedMateriel?.unavailable ? 'bg-rose-50 border-rose-200 text-rose-900'
+                                                : 'bg-slate-50 border-slate-200 text-slate-500'
                                         }`}>
                                         {matchedMateriel?.unavailable
-                                            ? `Ce matériel est déjà affecté sur cette période (${matchedMateriel.nom})`
+                                            ? `⚠️ ${t('materiels_affecte')} (${matchedMateriel.nom})`
                                             : matchedMateriel
-                                                ? `Matériel trouvé : ${matchedMateriel.nom} — ${matchedMateriel.marque} ${matchedMateriel.modele} [Catégorie : ${matchedMateriel.categorie?.nom_categorie ?? 'N/A'}]`
+                                                ? `✓ ${matchedMateriel.nom} — ${matchedMateriel.marque} ${matchedMateriel.modele}`
                                                 : addData.search_value
-                                                    ? 'Aucun matériel avec ce numéro'
-                                                    : 'En attente de numéro...'}
+                                                    ? '⚠️ Aucun matériel trouvé'
+                                                    : '⏳ ' + t('affectations_select_equipment')}
                                     </div>
                                 </div>
 
                                 <button
                                     type="submit"
                                     disabled={isSubmitting || !matchedEmploye || !matchedMateriel || matchedMateriel.unavailable}
-                                    className="bg-gray-800 text-white px-4 py-2 rounded md:col-span-4 hover:bg-gray-700 transition disabled:opacity-50"
+                                    className="bg-[#11508f] text-white px-5 py-2.5 rounded-xl md:col-span-4 hover:bg-[#0d3d6e] transition font-bold text-xs shadow-md shadow-[#11508f]/20 disabled:opacity-50"
                                 >
-                                    {isSubmitting ? 'Affectation en cours...' : 'Affecter'}
+                                    {isSubmitting ? t('loading') : t('affectations_new')}
                                 </button>
                             </form>
                         </div>
@@ -331,19 +349,19 @@ export default function Index({ affectations, employes, materiels }) {
                     <div className="lux-card p-6">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                             <div className="flex items-center gap-4">
-                                <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">Historique des affectations ({filteredAffectations.length})</h1>
+                                <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">{t('affectations_title')} ({filteredAffectations.length})</h1>
                                 <a
                                     href={route('exports.affectations.csv')}
                                     className="inline-flex items-center bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-md shadow-emerald-600/10"
                                 >
-                                    📥 Exporter CSV
+                                    📥 {t('export_csv')}
                                 </a>
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1 md:max-w-xl">
                                 <input
                                     type="text"
-                                    placeholder="Rechercher (Employé, Service, Matériel, S/N...)"
+                                    placeholder={t('search_placeholder')}
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     className="border border-slate-200 rounded-xl px-3.5 py-2 text-sm w-full focus:ring-1 focus:ring-[#11508f] bg-slate-50/50"
@@ -354,11 +372,30 @@ export default function Index({ affectations, employes, materiels }) {
                                     onChange={(e) => setEtatFilter(e.target.value)}
                                     className="border border-slate-200 rounded-xl px-3.5 py-2 text-sm w-full bg-white focus:ring-1 focus:ring-[#11508f]"
                                 >
-                                    <option value="all">Tous les états</option>
-                                    <option value="Affecté">Affecté (En cours)</option>
-                                    <option value="Clôturé">Clôturé (Restitué)</option>
-                                    <option value="prolonge">⚠️ Prolongés (> 6 mois)</option>
+                                    <option value="all">{t('affectations_all')}</option>
+                                    <option value="Affecté">{t('affectations_active')}</option>
+                                    <option value="Clôturé">{t('affectations_closed')}</option>
+                                    <option value="prolonge">⚠️ {t('affectations_prolonged', { months: prolongeMonths })}</option>
                                 </select>
+
+                                {etatFilter === 'prolonge' && (
+                                    <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 rounded-xl px-3 py-1.5 text-xs text-amber-900 dark:text-amber-300">
+                                        <span className="font-bold shrink-0">⏱️ {t('dashboard_alert_threshold')}</span>
+                                        <select
+                                            value={prolongeMonths}
+                                            onChange={(e) => setProlongeMonths(Number(e.target.value))}
+                                            className="border-0 bg-transparent py-0 pl-1 pr-6 text-xs font-extrabold focus:ring-0 text-amber-900 dark:text-amber-200 cursor-pointer"
+                                        >
+                                            <option value="1">1 mois</option>
+                                            <option value="2">2 mois</option>
+                                            <option value="3">3 mois</option>
+                                            <option value="6">6 mois (défaut)</option>
+                                            <option value="9">9 mois</option>
+                                            <option value="12">12 mois (1 an)</option>
+                                            <option value="24">24 mois (2 ans)</option>
+                                        </select>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -366,10 +403,10 @@ export default function Index({ affectations, employes, materiels }) {
                         {isFromAlert && (
                             <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center justify-between text-xs text-amber-900 dark:text-amber-300">
                                 <span className="font-semibold flex items-center gap-2">
-                                    ⚠️ Affichage des affectations prolongées en surbrillance suite à l'accès depuis l'alerte du tableau de bord.
+                                    ⚠️ {t('affectations_prolonged', { months: prolongeMonths })}
                                 </span>
                                 <a href={route('affectations.index')} className="text-amber-800 underline hover:text-amber-950 font-medium">
-                                    Réinitialiser l'affichage standard
+                                    {t('all')}
                                 </a>
                             </div>
                         )}
@@ -378,25 +415,25 @@ export default function Index({ affectations, employes, materiels }) {
                             <table className="w-full text-left border-collapse">
                                 <thead>
                                     <tr className="border-b bg-gray-50 text-sm">
-                                        <th className="py-2 px-3 whitespace-nowrap">Date affect.</th>
-                                        <th className="py-2 px-3 whitespace-nowrap">Nom</th>
-                                        <th className="py-2 px-3 whitespace-nowrap">Prénom</th>
-                                        <th className="py-2 px-3 whitespace-nowrap">Matricule</th>
-                                        <th className="py-2 px-3 whitespace-nowrap">Service</th>
-                                        <th className="py-2 px-3 whitespace-nowrap">Nom matériel</th>
-                                        <th className="py-2 px-3 whitespace-nowrap">Marque</th>
-                                        <th className="py-2 px-3 whitespace-nowrap">Modèle</th>
-                                        <th className="py-2 px-3 whitespace-nowrap">N° Série</th>
-                                        <th className="py-2 px-3 whitespace-nowrap">N° Inventaire</th>
-                                        <th className="py-2 px-3 whitespace-nowrap">Catégorie</th>
-                                        <th className="py-2 px-3 whitespace-nowrap">Date restit.</th>
-                                        <th className="py-2 px-3 whitespace-nowrap">État</th>
-                                        <th className="py-2 px-3 whitespace-nowrap">Actions</th>
+                                        <th className="py-2 px-3 whitespace-nowrap">{t('affectations_date_affectation')}</th>
+                                        <th className="py-2 px-3 whitespace-nowrap">{t('employes_nom')}</th>
+                                        <th className="py-2 px-3 whitespace-nowrap">{t('employes_prenom')}</th>
+                                        <th className="py-2 px-3 whitespace-nowrap">{t('employes_matricule')}</th>
+                                        <th className="py-2 px-3 whitespace-nowrap">{t('services')}</th>
+                                        <th className="py-2 px-3 whitespace-nowrap">{t('materiels_nom')}</th>
+                                        <th className="py-2 px-3 whitespace-nowrap">{t('materiels_marque')}</th>
+                                        <th className="py-2 px-3 whitespace-nowrap">{t('materiels_modele')}</th>
+                                        <th className="py-2 px-3 whitespace-nowrap">{t('materiels_sn')}</th>
+                                        <th className="py-2 px-3 whitespace-nowrap">{t('materiels_inv')}</th>
+                                        <th className="py-2 px-3 whitespace-nowrap">{t('materiels_categorie')}</th>
+                                        <th className="py-2 px-3 whitespace-nowrap">{t('affectations_date_retour')}</th>
+                                        <th className="py-2 px-3 whitespace-nowrap">{t('status')}</th>
+                                        <th className="py-2 px-3 whitespace-nowrap">{t('actions')}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="text-sm">
-                                    {filteredAffectations.map((a, index) => {
-                                        const isProlonged = a.etat === 'Affecté' && new Date(a.date_affectation) <= new Date(new Date().setMonth(new Date().getMonth() - 6));
+                                    {paginatedAffectations.map((a, index) => {
+                                        const isProlonged = a.etat === 'Affecté' && new Date(a.date_affectation) <= new Date(new Date().setMonth(new Date().getMonth() - prolongeMonths));
                                         const isHighlighted = isFromAlert && (highlightTargetId ? a.id === highlightTargetId : isProlonged);
 
                                         return (
@@ -419,9 +456,9 @@ export default function Index({ affectations, employes, materiels }) {
                                                 <td className="py-2 px-3 whitespace-nowrap">
                                                     <div className="flex items-center gap-1.5">
                                                         {etatBadge(a.etat)}
-                                                        {isHighlighted && (
+                                                        {isProlonged && (
                                                             <span className="text-[10px] bg-amber-200 text-amber-900 px-2 py-0.5 rounded font-bold uppercase tracking-wider">
-                                                                Alerte Prolongée
+                                                                ⚠️ Prolongée (+ de {prolongeMonths} m)
                                                             </span>
                                                         )}
                                                     </div>
@@ -434,7 +471,7 @@ export default function Index({ affectations, employes, materiels }) {
                                                                     type="button"
                                                                     className="inline-flex items-center px-3 py-1.5 border border-slate-200 text-xs font-bold rounded-xl text-slate-700 bg-white hover:bg-slate-50 hover:border-slate-300 transition shadow-sm gap-1.5"
                                                                 >
-                                                                    <span>Actions</span>
+                                                                    <span>{t('actions')}</span>
                                                                     <span className="text-[10px] text-slate-400">▼</span>
                                                                 </button>
                                                             </Dropdown.Trigger>
@@ -445,7 +482,7 @@ export default function Index({ affectations, employes, materiels }) {
                                                                     className="w-full text-left px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2"
                                                                 >
                                                                     <span>👁️</span>
-                                                                    <span>Consulter les détails</span>
+                                                                    <span>{t('details')}</span>
                                                                 </button>
 
                                                                 {canEdit && (
@@ -454,7 +491,7 @@ export default function Index({ affectations, employes, materiels }) {
                                                                         className="w-full text-left px-3.5 py-2 text-xs font-semibold text-[#11508f] hover:bg-blue-50 flex items-center gap-2"
                                                                     >
                                                                         <span>✏️</span>
-                                                                        <span>Modifier l'affectation</span>
+                                                                        <span>{t('edit')}</span>
                                                                     </button>
                                                                 )}
 
@@ -464,7 +501,7 @@ export default function Index({ affectations, employes, materiels }) {
                                                                         className="w-full text-left px-3.5 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 flex items-center gap-2"
                                                                     >
                                                                         <span>🔒</span>
-                                                                        <span>Clôturer / Restituer</span>
+                                                                        <span>{t('affectations_close_modal_title')}</span>
                                                                     </button>
                                                                 )}
 
@@ -475,14 +512,14 @@ export default function Index({ affectations, employes, materiels }) {
                                                                             className="w-full text-left px-3.5 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-50 flex items-center gap-2"
                                                                         >
                                                                             <span>📝</span>
-                                                                            <span>Modifier la clôture</span>
+                                                                            <span>{t('edit')}</span>
                                                                         </button>
                                                                         <button
                                                                             onClick={() => annulerCloture(a)}
                                                                             className="w-full text-left px-3.5 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50 flex items-center gap-2"
                                                                         >
                                                                             <span>🔓</span>
-                                                                            <span>Annuler la clôture</span>
+                                                                            <span>{t('cancel')}</span>
                                                                         </button>
                                                                     </>
                                                                 )}
@@ -495,7 +532,7 @@ export default function Index({ affectations, employes, materiels }) {
                                                                         className="w-full text-left px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2 block border-t border-slate-100"
                                                                     >
                                                                         <span>🖨️</span>
-                                                                        <span>Imprimer la fiche A4</span>
+                                                                        <span>{t('print')} ({t('affectations_print_sheet')})</span>
                                                                     </a>
                                                                 )}
 
@@ -505,7 +542,7 @@ export default function Index({ affectations, employes, materiels }) {
                                                                         className="w-full text-left px-3.5 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 flex items-center gap-2 border-t border-slate-100"
                                                                     >
                                                                         <span>🗑️</span>
-                                                                        <span>Supprimer</span>
+                                                                        <span>{t('delete')}</span>
                                                                     </button>
                                                                 )}
                                                             </Dropdown.Content>
@@ -519,8 +556,18 @@ export default function Index({ affectations, employes, materiels }) {
                             </table>
                         </div>
 
+                        {/* Pagination */}
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            totalItems={totalItems}
+                            pageSize={pageSize}
+                            onPageChange={setCurrentPage}
+                            onPageSizeChange={setPageSize}
+                        />
+
                         {affectations.length === 0 && (
-                            <p className="text-center text-gray-500 py-8">Aucune affectation enregistrée.</p>
+                            <p className="text-center text-gray-500 py-8">{t('pagination_no_data')}</p>
                         )}
                     </div>
                 </div>
@@ -531,32 +578,32 @@ export default function Index({ affectations, employes, materiels }) {
                 {voirAffectation && (
                     <div className="p-6 space-y-4 text-sm">
                         <div className="flex items-center justify-between border-b pb-3">
-                            <h2 className="text-lg font-semibold text-gray-800">Détail de l'affectation #AFF-{String(voirAffectation.id).padStart(5, '0')}</h2>
+                            <h2 className="text-lg font-semibold text-gray-800">{t('details')} #AFF-{String(voirAffectation.id).padStart(5, '0')}</h2>
                             {etatBadge(voirAffectation.etat)}
                         </div>
 
                         <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-2">
-                            <p className="text-xs uppercase font-bold text-slate-500 tracking-wider">Informations Bénéficiaire</p>
-                            <p><strong>Employé :</strong> {voirAffectation.employe?.nom} {voirAffectation.employe?.prenom} <span className="text-slate-500">({voirAffectation.employe?.matricule})</span></p>
-                            <p><strong>Service :</strong> <span className="font-semibold text-blue-700">{voirAffectation.employe?.service?.nom_service || 'Non attribué'}</span></p>
-                            {voirAffectation.employe?.fonction && <p><strong>Fonction :</strong> {voirAffectation.employe?.fonction}</p>}
+                            <p className="text-xs uppercase font-bold text-slate-500 tracking-wider">{t('print_beneficiary_info')}</p>
+                            <p><strong>{t('employes')} :</strong> {voirAffectation.employe?.nom} {voirAffectation.employe?.prenom} <span className="text-slate-500">({voirAffectation.employe?.matricule})</span></p>
+                            <p><strong>{t('services')} :</strong> <span className="font-semibold text-blue-700">{voirAffectation.employe?.service?.nom_service || t('unattached')}</span></p>
+                            {voirAffectation.employe?.fonction && <p><strong>{t('employes_fonction')} :</strong> {voirAffectation.employe?.fonction}</p>}
                         </div>
 
                         <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-2">
-                            <p className="text-xs uppercase font-bold text-slate-500 tracking-wider">Détails du Matériel</p>
-                            <p><strong>Matériel :</strong> {voirAffectation.materiel?.nom} — {voirAffectation.materiel?.marque} {voirAffectation.materiel?.modele}</p>
-                            <p><strong>N° Série :</strong> <code className="bg-slate-200 px-1.5 py-0.5 rounded text-xs">{voirAffectation.materiel?.numero_serie || '—'}</code></p>
-                            <p><strong>N° Inventaire :</strong> <code className="bg-slate-200 px-1.5 py-0.5 rounded text-xs">{voirAffectation.materiel?.numero_inventaire || '—'}</code></p>
-                            <p><strong>Catégorie :</strong> {voirAffectation.materiel?.categorie?.nom_categorie || '—'}</p>
+                            <p className="text-xs uppercase font-bold text-slate-500 tracking-wider">{t('print_equipment_info')}</p>
+                            <p><strong>{t('materiels')} :</strong> {voirAffectation.materiel?.nom} — {voirAffectation.materiel?.marque} {voirAffectation.materiel?.modele}</p>
+                            <p><strong>{t('materiels_sn')} :</strong> <code className="bg-slate-200 px-1.5 py-0.5 rounded text-xs">{voirAffectation.materiel?.numero_serie || '—'}</code></p>
+                            <p><strong>{t('materiels_inv')} :</strong> <code className="bg-slate-200 px-1.5 py-0.5 rounded text-xs">{voirAffectation.materiel?.numero_inventaire || '—'}</code></p>
+                            <p><strong>{t('materiels_categorie')} :</strong> {voirAffectation.materiel?.categorie?.nom_categorie || '—'}</p>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
                             <div>
-                                <p className="text-xs text-slate-500 font-semibold">Date d'affectation</p>
+                                <p className="text-xs text-slate-500 font-semibold">{t('affectations_date_affectation')}</p>
                                 <p className="font-medium text-slate-800">{formatDate(voirAffectation.date_affectation)}</p>
                             </div>
                             <div>
-                                <p className="text-xs text-slate-500 font-semibold">Date de restitution</p>
+                                <p className="text-xs text-slate-500 font-semibold">{t('affectations_date_retour')}</p>
                                 <p className="font-medium text-slate-800">{formatDate(voirAffectation.date_restitution)}</p>
                             </div>
                         </div>
@@ -566,19 +613,19 @@ export default function Index({ affectations, employes, materiels }) {
                                 onClick={() => imprimer(voirAffectation)}
                                 className="inline-flex items-center gap-2 bg-[#11508f] text-white px-4 py-2 rounded-md hover:bg-[#0d3d6e] transition font-medium text-sm"
                             >
-                                Imprimer la fiche
+                                {t('print')}
                             </button>
-                            <button onClick={() => setVoirAffectation(null)} className="text-slate-600 text-sm font-medium hover:text-slate-900">Fermer</button>
+                            <button onClick={() => setVoirAffectation(null)} className="text-slate-600 text-sm font-medium hover:text-slate-900">{t('close')}</button>
                         </div>
                     </div>
                 )}
             </Modal>
 
-            {/* Modal Modifier (employé / matériel / date d'affectation) */}
+            {/* Modal Modifier */}
             <Modal show={!!editState} onClose={() => setEditState(null)} maxWidth="lg">
                 {editState && (
                     <div className="p-6 space-y-3">
-                        <h2 className="text-lg font-medium mb-2">Modifier l'affectation</h2>
+                        <h2 className="text-lg font-medium mb-2">{t('edit')}</h2>
                         <input
                             type="date"
                             value={editState.date_affectation}
@@ -587,7 +634,7 @@ export default function Index({ affectations, employes, materiels }) {
                         />
                         <input
                             type="text"
-                            placeholder="Matricule employé"
+                            placeholder={t('employes_matricule')}
                             value={editState.matricule}
                             onChange={(e) => setEditState({ ...editState, matricule: e.target.value })}
                             className="border rounded px-3 py-2 w-full"
@@ -598,12 +645,12 @@ export default function Index({ affectations, employes, materiels }) {
                                 onChange={(e) => setEditState({ ...editState, search_type: e.target.value, search_value: '' })}
                                 className="border rounded px-3 py-2"
                             >
-                                <option value="serie">N° Série</option>
-                                <option value="inventaire">N° Inventaire</option>
+                                <option value="serie">{t('materiels_sn')}</option>
+                                <option value="inventaire">{t('materiels_inv')}</option>
                             </select>
                             <input
                                 type="text"
-                                placeholder={editState.search_type === 'serie' ? 'N° Série' : 'N° Inventaire'}
+                                placeholder={editState.search_type === 'serie' ? t('materiels_sn') : t('materiels_inv')}
                                 value={editState.search_value}
                                 onChange={(e) => setEditState({ ...editState, search_value: e.target.value })}
                                 className="border rounded px-3 py-2 flex-1"
@@ -612,17 +659,17 @@ export default function Index({ affectations, employes, materiels }) {
 
                         <div className="text-sm space-y-1">
                             <div className={`px-3 py-2 rounded border ${editMatchedEmploye ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
-                                {editMatchedEmploye ? `Employé : ${editMatchedEmploye.nom} ${editMatchedEmploye.prenom}` : 'Aucun employé avec ce matricule'}
+                                {editMatchedEmploye ? `${t('employes')} : ${editMatchedEmploye.nom} ${editMatchedEmploye.prenom}` : t('unspecified')}
                             </div>
                             <div className={`px-3 py-2 rounded border ${editMatchedMateriel && !editMatchedMateriel.unavailable ? 'bg-green-50 border-green-200'
                                     : editMatchedMateriel?.unavailable ? 'bg-red-50 border-red-200'
                                         : 'bg-gray-50 border-gray-200'
                                 }`}>
                                 {editMatchedMateriel?.unavailable
-                                    ? `Ce matériel est déjà affecté sur cette période (${editMatchedMateriel.nom})`
+                                    ? `${t('materiels_affecte')} (${editMatchedMateriel.nom})`
                                     : editMatchedMateriel
-                                        ? `Matériel : ${editMatchedMateriel.nom} - ${editMatchedMateriel.marque} ${editMatchedMateriel.modele}`
-                                        : 'Aucun matériel correspondant'}
+                                        ? `${t('materiels')} : ${editMatchedMateriel.nom} - ${editMatchedMateriel.marque} ${editMatchedMateriel.modele}`
+                                        : t('unspecified')}
                             </div>
                         </div>
 
@@ -631,27 +678,27 @@ export default function Index({ affectations, employes, materiels }) {
                         )}
 
                         <div className="flex justify-end gap-3 pt-2">
-                            <button onClick={() => setEditState(null)} className="text-gray-500 text-sm">Annuler</button>
+                            <button onClick={() => setEditState(null)} className="text-gray-500 text-sm">{t('cancel')}</button>
                             <button
                                 onClick={submitEdit}
                                 disabled={!editMatchedEmploye || !editMatchedMateriel || editMatchedMateriel.unavailable}
-                                className="bg-gray-800 text-white px-4 py-2 rounded text-sm disabled:opacity-50"
+                                className="bg-[#11508f] text-white px-4 py-2 rounded text-sm disabled:opacity-50"
                             >
-                                Enregistrer
+                                {t('save')}
                             </button>
                         </div>
                     </div>
                 )}
             </Modal>
 
-            {/* Modal Clôturer / Modifier la clôture */}
+            {/* Modal Clôturer */}
             <Modal show={!!clotureState} onClose={() => setClotureState(null)} maxWidth="sm">
                 {clotureState && (
                     <div className="p-6 space-y-3">
                         <h2 className="text-lg font-medium mb-2">
-                            {clotureState.isEditing ? 'Modifier la date de clôture' : "Clôturer l'affectation"}
+                            {clotureState.isEditing ? t('edit') : t('affectations_close_modal_title')}
                         </h2>
-                        <label className="block text-sm text-gray-700">Date de clôture</label>
+                        <label className="block text-sm text-gray-700">{t('affectations_restitution_date')}</label>
                         <input
                             type="date"
                             min={clotureState.minDate}
@@ -663,15 +710,10 @@ export default function Index({ affectations, employes, materiels }) {
                         {pageErrors?.cloture && (
                             <p className="text-red-600 text-sm">{pageErrors.cloture}</p>
                         )}
-                        <p className="text-xs text-gray-500">
-                            {clotureState.isEditing
-                                ? 'Si la nouvelle date chevauche une autre affectation de ce matériel, la modification sera refusée.'
-                                : 'Une fois clôturée, le matériel redevient disponible pour une nouvelle affectation à partir de cette date.'}
-                        </p>
                         <div className="flex justify-end gap-3 pt-2">
-                            <button onClick={() => setClotureState(null)} className="text-gray-500 text-sm">Annuler</button>
+                            <button onClick={() => setClotureState(null)} className="text-gray-500 text-sm">{t('cancel')}</button>
                             <button onClick={confirmCloture} className="bg-indigo-600 text-white px-4 py-2 rounded text-sm hover:bg-indigo-700">
-                                {clotureState.isEditing ? 'Enregistrer' : 'Confirmer la clôture'}
+                                {clotureState.isEditing ? t('save') : t('affectations_close_btn')}
                             </button>
                         </div>
                     </div>

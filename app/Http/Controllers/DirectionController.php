@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AuditLog;
 use App\Models\Direction;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -11,30 +12,40 @@ class DirectionController extends Controller
     public function index()
     {
         return Inertia::render('Directions/Index', [
-            'directions' => Direction::withCount('departements')->get(),
+            'directions' => Direction::withCount('departements')->latest()->get(),
         ]);
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'nom_direction' => 'required|string|max:255',
+            'nom_direction' => 'required|string|max:255|unique:directions,nom_direction',
+        ], [
+            'nom_direction.required' => 'Le nom de la direction est obligatoire.',
+            'nom_direction.unique' => 'Une direction portant ce nom existe déjà dans l\'organisation.',
         ]);
 
-        Direction::create($validated);
+        $dir = Direction::create($validated);
 
-        return redirect()->back();
+        AuditLog::record('Création', 'Structure', "Ajout de la direction '{$dir->nom_direction}'", $dir);
+
+        return redirect()->back()->with('success', "Direction '{$dir->nom_direction}' créée avec succès.");
     }
 
     public function update(Request $request, Direction $direction)
     {
         $validated = $request->validate([
-            'nom_direction' => 'required|string|max:255',
+            'nom_direction' => 'required|string|max:255|unique:directions,nom_direction,' . $direction->id,
+        ], [
+            'nom_direction.required' => 'Le nom de la direction est obligatoire.',
+            'nom_direction.unique' => 'Une direction portant ce nom existe déjà dans l\'organisation.',
         ]);
 
         $direction->update($validated);
 
-        return redirect()->back();
+        AuditLog::record('Modification', 'Structure', "Mise à jour de la direction '{$direction->nom_direction}'", $direction);
+
+        return redirect()->back()->with('success', "Direction '{$direction->nom_direction}' mise à jour avec succès.");
     }
 
     public function destroy(Direction $direction)
@@ -45,8 +56,11 @@ class DirectionController extends Controller
             ]);
         }
 
+        $nom = $direction->nom_direction;
         $direction->delete();
 
-        return redirect()->back();
+        AuditLog::record('Suppression', 'Structure', "Suppression de la direction '{$nom}'");
+
+        return redirect()->back()->with('success', "Direction '{$nom}' supprimée avec succès.");
     }
-}
+}

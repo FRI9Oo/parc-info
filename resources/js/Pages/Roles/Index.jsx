@@ -1,12 +1,27 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import Modal from '@/Components/Modal';
+import Pagination from '@/Components/Pagination';
+import usePagination from '@/Hooks/usePagination';
+import { useLanguage } from '@/Context/LanguageContext';
 import { Head, useForm, router, usePage } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 
 export default function Index({ roles, permissions = [] }) {
     const { errors: pageErrors } = usePage().props;
+    const { t } = useLanguage();
     const [showModal, setShowModal] = useState(false);
     const [editingRole, setEditingRole] = useState(null);
+
+    // ---------- Pagination ----------
+    const {
+        currentPage,
+        setCurrentPage,
+        pageSize,
+        setPageSize,
+        totalItems,
+        totalPages,
+        paginatedItems: paginatedRoles,
+    } = usePagination(roles, 10);
 
     const { data, setData, post, put, processing, reset, errors, clearErrors } = useForm({
         nom_role: '',
@@ -117,7 +132,7 @@ export default function Index({ roles, permissions = [] }) {
 
     return (
         <AuthenticatedLayout>
-            <Head title="Gestion des Rôles & Habilitations" />
+            <Head title={t('roles_title')} />
             <div className="py-12">
                 <div className="max-w-6xl mx-auto sm:px-6 lg:px-8 space-y-6">
                     {pageErrors?.delete && (
@@ -128,14 +143,14 @@ export default function Index({ roles, permissions = [] }) {
 
                     <div className="flex justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                         <div>
-                            <h1 className="text-xl font-bold text-slate-800">Gestion des Rôles & Habilitations</h1>
-                            <p className="text-sm text-slate-500 mt-1">Définissez les rôles et leurs ensembles de permissions prédéfinies.</p>
+                            <h1 className="text-xl font-bold text-slate-800">{t('roles_title')}</h1>
+                            <p className="text-sm text-slate-500 mt-1">{t('roles_definition')}</p>
                         </div>
                         <button
                             onClick={openAdd}
                             className="bg-[#11508f] text-white px-4 py-2.5 rounded-lg hover:bg-[#0d3d6e] transition font-medium text-sm shadow-sm flex items-center gap-2"
                         >
-                            + Ajouter un rôle
+                            + {t('roles_add_new')}
                         </button>
                     </div>
 
@@ -145,15 +160,15 @@ export default function Index({ roles, permissions = [] }) {
                             <table className="w-full text-left border-collapse">
                                 <thead>
                                     <tr className="border-b bg-slate-50 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                                        <th className="py-3 px-4">Rôle</th>
-                                        <th className="py-3 px-4">Description</th>
-                                        <th className="py-3 px-4">Habilitations (Modules Accordés)</th>
-                                        <th className="py-3 px-4 text-center">Utilisateurs</th>
-                                        <th className="py-3 px-4 text-right">Actions</th>
+                                        <th className="py-3 px-4">{t('roles_name')}</th>
+                                        <th className="py-3 px-4">{t('roles_description')}</th>
+                                        <th className="py-3 px-4">{t('roles_permissions')}</th>
+                                        <th className="py-3 px-4 text-center">{t('users')}</th>
+                                        <th className="py-3 px-4 text-right">{t('actions')}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="text-sm divide-y divide-slate-100">
-                                    {roles.map((role) => {
+                                    {paginatedRoles.map((role) => {
                                         const rolePermIds = role.permissions.map((p) => p.id);
                                         return (
                                             <tr key={role.id} className="hover:bg-slate-50/80 transition align-top">
@@ -162,7 +177,7 @@ export default function Index({ roles, permissions = [] }) {
                                                 <td className="py-4 px-4">
                                                     <div className="flex flex-wrap gap-2">
                                                         {role.permissions.length === 0 && (
-                                                            <span className="text-slate-400 text-xs italic">Aucune permission</span>
+                                                            <span className="text-slate-400 text-xs italic">{t('no_permissions')}</span>
                                                         )}
                                                         {Object.entries(groupedPermissions).map(([modName, modPerms]) => {
                                                             const count = modPerms.filter((p) => rolePermIds.includes(p.id)).length;
@@ -187,7 +202,7 @@ export default function Index({ roles, permissions = [] }) {
                                                     <div className="flex justify-end items-center gap-1.5">
                                                         <button
                                                             onClick={() => openEdit(role)}
-                                                            title="Modifier le rôle et ses permissions"
+                                                            title={t('edit')}
                                                             className="p-1.5 rounded-lg text-blue-600 hover:text-blue-800 hover:bg-blue-50 transition"
                                                         >
                                                             ✏️
@@ -195,7 +210,7 @@ export default function Index({ roles, permissions = [] }) {
                                                         {role.nom_role !== 'Administrateur' && (
                                                             <button
                                                                 onClick={() => destroy(role.id)}
-                                                                title="Supprimer le rôle"
+                                                                title={t('delete')}
                                                                 className="p-1.5 rounded-lg text-red-600 hover:text-red-800 hover:bg-red-50 transition"
                                                             >
                                                                 🗑️
@@ -209,6 +224,16 @@ export default function Index({ roles, permissions = [] }) {
                                 </tbody>
                             </table>
                         </div>
+
+                        {/* Pagination */}
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            totalItems={totalItems}
+                            pageSize={pageSize}
+                            onPageChange={setCurrentPage}
+                            onPageSizeChange={setPageSize}
+                        />
                     </div>
                 </div>
             </div>
@@ -218,42 +243,49 @@ export default function Index({ roles, permissions = [] }) {
                 <form onSubmit={submit} className="p-6 space-y-5 max-h-[90vh] overflow-y-auto">
                     <div className="border-b pb-3">
                         <h2 className="text-lg font-bold text-slate-800">
-                            {editingRole ? `Modifier le rôle : ${editingRole.nom_role}` : 'Créer un nouveau rôle'}
+                            {editingRole ? t('roles_edit', { name: editingRole.nom_role }) : t('roles_add_new')}
                         </h2>
-                        <p className="text-xs text-slate-500">Sélectionnez les modules principaux (Big Permissions) ou personnalisez les sous-autorisations (Little Permissions).</p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1">Nom du rôle *</label>
+                            <label className="block text-xs font-bold text-slate-700 mb-1">{t('roles_name')} <span className="text-rose-500">*</span></label>
                             <input
                                 type="text"
                                 placeholder="ex: Gestionnaire Parc, Consultant..."
                                 value={data.nom_role}
-                                onChange={(e) => setData('nom_role', e.target.value)}
-                                className="border rounded-lg px-3 py-2 text-sm w-full focus:ring-1 focus:ring-[#11508f]"
+                                onChange={(e) => {
+                                    setData('nom_role', e.target.value);
+                                    if (errors.nom_role) clearErrors('nom_role');
+                                }}
+                                className={`border rounded-xl px-3.5 py-2.5 text-sm w-full transition ${
+                                    errors.nom_role ? 'border-rose-500 ring-2 ring-rose-400 bg-rose-50/40 text-rose-900' : 'border-slate-200 focus:ring-2 focus:ring-[#11508f]'
+                                }`}
                                 required
                             />
-                            {errors.nom_role && <p className="text-rose-600 text-xs mt-1">{errors.nom_role}</p>}
+                            {errors.nom_role && <p className="text-rose-600 text-xs font-semibold mt-1.5 flex items-center gap-1"><span>⚠️</span> {errors.nom_role}</p>}
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1">Description</label>
+                            <label className="block text-xs font-bold text-slate-700 mb-1">{t('roles_description')}</label>
                             <input
                                 type="text"
                                 placeholder="Description succincte de la responsabilité..."
                                 value={data.description_role}
-                                onChange={(e) => setData('description_role', e.target.value)}
-                                className="border rounded-lg px-3 py-2 text-sm w-full focus:ring-1 focus:ring-[#11508f]"
+                                onChange={(e) => {
+                                    setData('description_role', e.target.value);
+                                    if (errors.description_role) clearErrors('description_role');
+                                }}
+                                className="border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm w-full focus:ring-2 focus:ring-[#11508f]"
                             />
                         </div>
                     </div>
 
                     <div className="space-y-4 pt-2">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Catalogue des Permissions Prédéfinies</h3>
+                            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">{t('roles_permissions')}</h3>
                             <span className="text-xs text-slate-500">
-                                {data.permission_ids.length} / {permissions.length} sélectionnée(s)
+                                {data.permission_ids.length} / {permissions.length} {t('selected')}
                             </span>
                         </div>
 
@@ -280,10 +312,10 @@ export default function Index({ roles, permissions = [] }) {
                                                     onChange={() => toggleModule(modPerms)}
                                                     className="rounded border-slate-300 text-[#11508f] focus:ring-[#11508f] h-4 w-4"
                                                 />
-                                                <span>Module : {modName} (Big Permission)</span>
+                                                <span>Module : {modName}</span>
                                             </label>
                                             <span className="text-xs font-semibold text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200">
-                                                {checkedCount} / {modPerms.length} actives
+                                                {checkedCount} / {modPerms.length}
                                             </span>
                                         </div>
 
@@ -337,14 +369,14 @@ export default function Index({ roles, permissions = [] }) {
                             onClick={() => setShowModal(false)}
                             className="text-slate-600 text-sm font-medium px-4 py-2 hover:text-slate-900"
                         >
-                            Annuler
+                            {t('cancel')}
                         </button>
                         <button
                             type="submit"
                             disabled={processing}
                             className="bg-[#11508f] text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-[#0d3d6e] transition disabled:opacity-50"
                         >
-                            Enregistrer le rôle
+                            {t('save')}
                         </button>
                     </div>
                 </form>

@@ -8,6 +8,7 @@ class AffectationMateriel extends Model
 {
     protected $fillable = [
         'date_affectation', 'date_restitution', 'employe_id', 'materiel_id',
+        'direction_id', 'departement_id', 'division_id', 'service_id',
     ];
 
     protected $casts = [
@@ -26,6 +27,26 @@ class AffectationMateriel extends Model
     public function materiel()
     {
         return $this->belongsTo(Materiel::class);
+    }
+
+    public function direction()
+    {
+        return $this->belongsTo(Direction::class);
+    }
+
+    public function departement()
+    {
+        return $this->belongsTo(Departement::class);
+    }
+
+    public function division()
+    {
+        return $this->belongsTo(Division::class);
+    }
+
+    public function service()
+    {
+        return $this->belongsTo(Service::class);
     }
 
     /**
