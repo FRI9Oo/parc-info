@@ -83,22 +83,18 @@ class AchatController extends Controller
         $validated = $request->validate([
             'objet_achat' => 'required|string|max:255',
             'numero_achat' => 'required|string|max:100|unique:achats,numero_achat',
-            'type_achat' => 'required|string|max:100',
+            'type_achat' => 'required|string|in:Marché,Bon de commande',
             'date_achat' => 'required|date',
-            'statut' => 'required|string|max:50',
             'fournisseur_id' => 'required|exists:fournisseurs,id',
         ], [
             'numero_achat.unique' => 'Ce numéro d\'achat/marché existe déjà.',
             'numero_achat.required' => 'Le numéro d\'achat est obligatoire.',
             'objet_achat.required' => 'L\'objet de l\'achat est obligatoire.',
+            'type_achat.in' => 'Le type d\'achat doit être soit Marché soit Bon de commande.',
             'fournisseur_id.required' => 'Veuillez sélectionner un fournisseur.',
         ]);
 
-        if ($validated['statut'] === 'Validé') {
-            return redirect()->back()->withErrors([
-                'statut' => "Un achat ne peut pas être initialisé avec le statut 'Validé'. Il doit d'abord être réceptionné et tous ses matériels affectés aux collaborateurs.",
-            ]);
-        }
+        $validated['statut'] = 'En cours';
 
         $achat = Achat::create($validated);
         $achat->load('fournisseur');
@@ -118,7 +114,7 @@ class AchatController extends Controller
         $validated = $request->validate([
             'objet_achat' => 'required|string|max:255',
             'numero_achat' => 'required|string|max:100|unique:achats,numero_achat,' . $achat->id,
-            'type_achat' => 'required|string|max:100',
+            'type_achat' => 'required|string|in:Marché,Bon de commande',
             'date_achat' => 'required|date',
             'statut' => 'required|string|max:50',
             'fournisseur_id' => 'required|exists:fournisseurs,id',
@@ -126,6 +122,7 @@ class AchatController extends Controller
             'numero_achat.unique' => 'Ce numéro d\'achat/marché existe déjà.',
             'numero_achat.required' => 'Le numéro d\'achat est obligatoire.',
             'objet_achat.required' => 'L\'objet de l\'achat est obligatoire.',
+            'type_achat.in' => 'Le type d\'achat doit être soit Marché soit Bon de commande.',
             'fournisseur_id.required' => 'Veuillez sélectionner un fournisseur.',
         ]);
 

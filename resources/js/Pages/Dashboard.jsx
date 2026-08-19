@@ -5,6 +5,7 @@ import { Head, Link, usePage, router } from '@inertiajs/react';
 export default function Dashboard({
     stats = {},
     recentAffectations = [],
+    recentAchats = [],
     categoriesBreakdown = [],
     longStandingAffectations = [],
     recentAudits = [],
@@ -92,19 +93,28 @@ export default function Dashboard({
                                 {canViewAffectations && (
                                     <Link
                                         href={route('affectations.index')}
-                                        className="btn-zellij px-4 py-2.5 rounded-xl font-extrabold text-xs flex items-center gap-1.5"
+                                        className="btn-zellij px-4 py-2.5 rounded-xl font-extrabold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-600/20"
                                     >
                                         <span>➕</span>
                                         <span>{t('affectations_new')}</span>
                                     </Link>
                                 )}
-                                {canViewMateriels && (
+                                {canViewLivraisons && (
                                     <Link
-                                        href={route('materiels.index')}
+                                        href={route('livraisons.index')}
                                         className="bg-white/15 hover:bg-white/25 text-white backdrop-blur-md border border-white/20 px-3.5 py-2.5 rounded-xl font-extrabold text-xs transition flex items-center gap-1.5"
                                     >
-                                        <span>📥</span>
-                                        <span>Import Excel</span>
+                                        <span>📦</span>
+                                        <span>Réception BL</span>
+                                    </Link>
+                                )}
+                                {canViewFactures && (
+                                    <Link
+                                        href={route('factures.index')}
+                                        className="bg-white/15 hover:bg-white/25 text-white backdrop-blur-md border border-white/20 px-3.5 py-2.5 rounded-xl font-extrabold text-xs transition flex items-center gap-1.5"
+                                    >
+                                        <span>🧾</span>
+                                        <span>Factures</span>
                                     </Link>
                                 )}
                                 {canViewAchats && (
@@ -113,7 +123,7 @@ export default function Dashboard({
                                         className="bg-white/15 hover:bg-white/25 text-white backdrop-blur-md border border-white/20 px-3.5 py-2.5 rounded-xl font-extrabold text-xs transition flex items-center gap-1.5"
                                     >
                                         <span>🛒</span>
-                                        <span>Nouveau Marché</span>
+                                        <span>Marchés</span>
                                     </Link>
                                 )}
                             </div>
@@ -195,19 +205,31 @@ export default function Dashboard({
                     {/* Financials & Purchasing Executive KPIs */}
                     {(canViewAchats || canViewFactures) && (
                         <div>
-                            <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-3 px-1 flex items-center gap-1.5">
-                                <span>💰</span>
-                                <span>{t('dashboard_financials')}</span>
-                            </h2>
+                            <div className="flex items-center justify-between mb-3 px-1">
+                                <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 flex items-center gap-1.5">
+                                    <span>💰</span>
+                                    <span>{t('dashboard_financials')}</span>
+                                </h2>
+                                <div className="flex items-center gap-2 text-xs">
+                                    <Link href={route('achats.index')} className="text-[#11508f] dark:text-blue-400 font-bold hover:underline">
+                                        Marchés →
+                                    </Link>
+                                    <span className="text-slate-300">•</span>
+                                    <Link href={route('factures.index')} className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline">
+                                        Factures →
+                                    </Link>
+                                </div>
+                            </div>
+                            
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                 
                                 {/* Budget Engagé HT */}
-                                <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                                <div className="lux-card p-5 border border-slate-200/80 dark:border-slate-800">
                                     <div className="flex items-center justify-between">
                                         <span className="text-xs font-bold text-slate-500 uppercase">{t('dashboard_budget_total')}</span>
                                         <span className="p-2 rounded-xl bg-blue-50 text-blue-600 text-sm">📊</span>
                                     </div>
-                                    <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-2">
+                                    <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-2 font-mono">
                                         {formatCurrency(stats.total_budget_ht)}
                                     </div>
                                     <div className="text-[11px] text-slate-400 mt-1">
@@ -216,21 +238,21 @@ export default function Dashboard({
                                 </div>
 
                                 {/* Total Facturé TTC */}
-                                <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                                <div className="lux-card p-5 border border-slate-200/80 dark:border-slate-800">
                                     <div className="flex items-center justify-between">
                                         <span className="text-xs font-bold text-slate-500 uppercase">{t('dashboard_invoiced_total')}</span>
                                         <span className="p-2 rounded-xl bg-emerald-50 text-emerald-600 text-sm">🧾</span>
                                     </div>
-                                    <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-2">
+                                    <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-2 font-mono">
                                         {formatCurrency(stats.total_factures_ttc)}
                                     </div>
                                     <div className="text-[11px] text-slate-400 mt-1">
-                                        TVA 20% calculée automatiquement
+                                        {stats.factures || 0} facture(s) enregistrée(s)
                                     </div>
                                 </div>
 
                                 {/* Taux Global de Livraison */}
-                                <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                                <div className="lux-card p-5 border border-slate-200/80 dark:border-slate-800">
                                     <div className="flex items-center justify-between">
                                         <span className="text-xs font-bold text-slate-500 uppercase">{t('dashboard_delivery_fulfillment')}</span>
                                         <span className="p-2 rounded-xl bg-amber-50 text-amber-600 text-sm">📦</span>
@@ -238,13 +260,13 @@ export default function Dashboard({
                                     <div className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400 mt-2">
                                         {stats.taux_livraison_global}%
                                     </div>
-                                    <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2 overflow-hidden">
-                                        <div className="bg-amber-500 h-1.5 rounded-full" style={{ width: `${stats.taux_livraison_global}%` }}></div>
+                                    <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 mt-2 overflow-hidden">
+                                        <div className="bg-amber-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${stats.taux_livraison_global}%` }}></div>
                                     </div>
                                 </div>
 
                                 {/* Marchés Status Distribution */}
-                                <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                                <div className="lux-card p-5 border border-slate-200/80 dark:border-slate-800">
                                     <div className="flex items-center justify-between">
                                         <span className="text-xs font-bold text-slate-500 uppercase">Marchés & Commandes</span>
                                         <span className="p-2 rounded-xl bg-indigo-50 text-indigo-600 text-sm">🛒</span>
@@ -254,10 +276,10 @@ export default function Dashboard({
                                         <span className="text-xs text-slate-400">total</span>
                                     </div>
                                     <div className="flex items-center gap-2 mt-1.5 text-[11px]">
-                                        <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 font-bold">
+                                        <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 font-bold dark:bg-amber-950/40 dark:text-amber-300">
                                             {stats.achats_en_cours || 0} en cours
                                         </span>
-                                        <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-bold">
+                                        <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-bold dark:bg-emerald-950/40 dark:text-emerald-300">
                                             {stats.achats_valides || 0} validés
                                         </span>
                                     </div>
@@ -279,7 +301,7 @@ export default function Dashboard({
                             {canViewMateriels ? (
                                 <Link
                                     href={route('materiels.index')}
-                                    className="relative overflow-hidden bg-gradient-to-br from-[#0d3d6e] via-[#11508f] to-[#1d6fc2] text-white p-6 rounded-2xl shadow-xl shadow-[#11508f]/25 block group hover:scale-[1.02] transition-all"
+                                    className="relative overflow-hidden bg-gradient-to-br from-[#0d3d6e] via-[#11508f] to-[#1d6fc2] text-white p-6 rounded-3xl shadow-xl shadow-[#11508f]/25 block group hover:scale-[1.02] transition-all"
                                 >
                                     <div className="flex justify-between items-start relative z-10">
                                         <div>
@@ -296,7 +318,7 @@ export default function Dashboard({
                                     <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
                                 </Link>
                             ) : (
-                                <div className="relative overflow-hidden bg-gradient-to-br from-[#0d3d6e] via-[#11508f] to-[#1d6fc2] text-white p-6 rounded-2xl shadow-xl shadow-[#11508f]/25">
+                                <div className="relative overflow-hidden bg-gradient-to-br from-[#0d3d6e] via-[#11508f] to-[#1d6fc2] text-white p-6 rounded-3xl shadow-xl shadow-[#11508f]/25">
                                     <div className="flex justify-between items-start relative z-10">
                                         <div>
                                             <div className="text-xs font-extrabold uppercase tracking-wider text-blue-200">{t('dashboard_total_hardware')}</div>
@@ -313,7 +335,7 @@ export default function Dashboard({
                             {canViewAffectations ? (
                                 <Link
                                     href={route('affectations.index')}
-                                    className="relative overflow-hidden bg-gradient-to-br from-[#3f8835] via-[#57b24a] to-[#6bc45f] text-white p-6 rounded-2xl shadow-xl shadow-[#57b24a]/25 block group hover:scale-[1.02] transition-all"
+                                    className="relative overflow-hidden bg-gradient-to-br from-[#3f8835] via-[#57b24a] to-[#6bc45f] text-white p-6 rounded-3xl shadow-xl shadow-[#57b24a]/25 block group hover:scale-[1.02] transition-all"
                                 >
                                     <div className="flex justify-between items-start relative z-10">
                                         <div>
@@ -336,7 +358,7 @@ export default function Dashboard({
                                     <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-white/15 rounded-full blur-2xl pointer-events-none"></div>
                                 </Link>
                             ) : (
-                                <div className="relative overflow-hidden bg-gradient-to-br from-[#3f8835] via-[#57b24a] to-[#6bc45f] text-white p-6 rounded-2xl shadow-xl shadow-[#57b24a]/25">
+                                <div className="relative overflow-hidden bg-gradient-to-br from-[#3f8835] via-[#57b24a] to-[#6bc45f] text-white p-6 rounded-3xl shadow-xl shadow-[#57b24a]/25">
                                     <div className="flex justify-between items-start relative z-10">
                                         <div>
                                             <div className="text-xs font-extrabold uppercase tracking-wider text-green-100">{t('dashboard_assigned')}</div>
@@ -350,7 +372,7 @@ export default function Dashboard({
                             )}
 
                             {/* Card 3: Available Stock */}
-                            <div className="relative overflow-hidden bg-gradient-to-br from-[#d4960e] via-[#fab61e] to-[#fbc848] text-slate-950 p-6 rounded-2xl shadow-xl shadow-[#fab61e]/25">
+                            <div className="relative overflow-hidden bg-gradient-to-br from-[#d4960e] via-[#fab61e] to-[#fbc848] text-slate-950 p-6 rounded-3xl shadow-xl shadow-[#fab61e]/25">
                                 <div className="flex justify-between items-start relative z-10">
                                     <div>
                                         <div className="text-xs font-extrabold uppercase tracking-wider text-amber-950/80">{t('dashboard_available_stock')}</div>
@@ -377,7 +399,7 @@ export default function Dashboard({
 
                     {/* Category Distribution Breakdown Progress Visualizer */}
                     {categoriesBreakdown.length > 0 && (
-                        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <div className="lux-card p-6 border border-slate-200/80 dark:border-slate-800">
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
                                     <span>🏷️</span>
@@ -390,7 +412,7 @@ export default function Dashboard({
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {categoriesBreakdown.map((cat) => (
-                                    <div key={cat.id} className="p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40">
+                                    <div key={cat.id} className="p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40">
                                         <div className="flex items-center justify-between">
                                             <span className="font-bold text-xs text-slate-800 dark:text-slate-200">{cat.nom_categorie}</span>
                                             <span className="text-xs font-extrabold text-indigo-600 dark:text-indigo-400">{cat.total} total</span>
@@ -404,8 +426,8 @@ export default function Dashboard({
                                         </div>
 
                                         <div className="flex justify-between items-center text-[11px] text-slate-500 mt-2">
-                                            <span className="text-emerald-700 font-semibold">👤 {cat.affectes} affecté(s)</span>
-                                            <span className="text-amber-700 font-semibold">📦 {cat.disponibles} en stock</span>
+                                            <span className="text-emerald-700 dark:text-emerald-400 font-semibold">👤 {cat.affectes} affecté(s)</span>
+                                            <span className="text-amber-700 dark:text-amber-400 font-semibold">📦 {cat.disponibles} en stock</span>
                                         </div>
                                     </div>
                                 ))}
@@ -413,11 +435,11 @@ export default function Dashboard({
                         </div>
                     )}
 
-                    {/* Two Columns: Recent Assignments + Available Stock Sample */}
+                    {/* Multi-Section Grid: Recent Assignments + Available Stock + Recent Purchases */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
                         {/* Col 1 & 2: Recent Affectations */}
-                        <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <div className="lg:col-span-2 lux-card p-6 border border-slate-200/80 dark:border-slate-800">
                             <div className="flex items-center justify-between mb-4">
                                 <div>
                                     <h3 className="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
@@ -463,11 +485,11 @@ export default function Dashboard({
                                                     </td>
                                                     <td className="py-2.5 px-3 text-right whitespace-nowrap">
                                                         {a.etat === 'Clôturé' ? (
-                                                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600">
+                                                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
                                                                 Clôturé
                                                             </span>
                                                         ) : (
-                                                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700">
+                                                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
                                                                 Affecté
                                                             </span>
                                                         )}
@@ -481,7 +503,7 @@ export default function Dashboard({
                         </div>
 
                         {/* Col 3: Available Hardware Ready for Assignment */}
-                        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <div className="lux-card p-6 border border-slate-200/80 dark:border-slate-800">
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
                                     <span>📦</span>
@@ -499,7 +521,7 @@ export default function Dashboard({
                             ) : (
                                 <div className="space-y-3">
                                     {availableMateriels.map((m) => (
-                                        <div key={m.id} className="p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 flex items-center justify-between text-xs">
+                                        <div key={m.id} className="p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 flex items-center justify-between text-xs">
                                             <div>
                                                 <div className="font-bold text-slate-900 dark:text-white">{m.nom}</div>
                                                 <div className="text-[11px] font-mono text-slate-400 mt-0.5">S/N: {m.numero_serie}</div>
@@ -520,9 +542,55 @@ export default function Dashboard({
 
                     </div>
 
+                    {/* Recent Purchases Snapshot */}
+                    {canViewAchats && recentAchats.length > 0 && (
+                        <div className="lux-card p-6 border border-slate-200/80 dark:border-slate-800">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                                    <span>🛒</span>
+                                    <span>Derniers Marchés & Commandes</span>
+                                </h3>
+                                <Link href={route('achats.index')} className="text-xs font-bold text-[#11508f] dark:text-blue-400 hover:underline">
+                                    Tous les achats →
+                                </Link>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                {recentAchats.map((achat) => (
+                                    <Link
+                                        key={achat.id}
+                                        href={route('achats.show', achat.id)}
+                                        className="p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 hover:border-indigo-300 dark:hover:border-indigo-700 transition block group text-xs"
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <span className="font-mono font-black text-indigo-600 dark:text-indigo-400 group-hover:underline">
+                                                {achat.numero_achat}
+                                            </span>
+                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                                achat.statut === 'Validé' ? 'bg-emerald-50 text-emerald-700' :
+                                                achat.statut === 'Livré partiellement' ? 'bg-blue-50 text-blue-700' :
+                                                achat.statut === 'Soldé' ? 'bg-purple-50 text-purple-700' :
+                                                'bg-amber-50 text-amber-700'
+                                            }`}>
+                                                {achat.statut}
+                                            </span>
+                                        </div>
+                                        <div className="font-bold text-slate-900 dark:text-white mt-1 line-clamp-1">
+                                            {achat.objet_achat}
+                                        </div>
+                                        <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 flex items-center justify-between">
+                                            <span>🏢 {achat.fournisseur?.nom_fournisseur || '—'}</span>
+                                            <span className="font-mono">{formatDate(achat.date_achat)}</span>
+                                        </div>
+                                    </Link>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Security & Audit Activity Feed */}
                     {canViewAudits && recentAudits.length > 0 && (
-                        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <div className="lux-card p-6 border border-slate-200/80 dark:border-slate-800">
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
                                     <span>🛡️</span>

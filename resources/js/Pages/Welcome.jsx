@@ -76,12 +76,21 @@ export default function Welcome({ auth }) {
                                     {t('workspace_access')}
                                 </Link>
                             ) : (
-                                <Link
-                                    href={route('login')}
-                                    className="btn-zellij px-6 py-2.5 rounded-xl font-extrabold text-xs"
-                                >
-                                    {t('login_access')}
-                                </Link>
+                                <div className="flex items-center gap-2">
+                                    <Link
+                                        href={route('login')}
+                                        className="px-4 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                                    >
+                                        {t('login_btn')}
+                                    </Link>
+                                    <Link
+                                        href={route('register')}
+                                        className="btn-zellij px-4 py-2 rounded-xl font-extrabold text-xs shadow-sm flex items-center gap-1.5"
+                                    >
+                                        <span>✨</span>
+                                        <span>{t('register_btn')}</span>
+                                    </Link>
+                                </div>
                             )}
                         </div>
                     </div>
@@ -116,12 +125,22 @@ export default function Welcome({ auth }) {
                                     {t('go_to_dashboard')}
                                 </Link>
                             ) : (
-                                <Link
-                                    href={route('login')}
-                                    className="w-full sm:w-auto btn-zellij px-8 py-4 rounded-2xl font-extrabold text-sm shadow-xl"
-                                >
-                                    {t('login_access')}
-                                </Link>
+                                <>
+                                    <Link
+                                        href={route('login')}
+                                        className="w-full sm:w-auto btn-zellij px-8 py-4 rounded-2xl font-extrabold text-sm shadow-xl flex items-center justify-center gap-2"
+                                    >
+                                        <span>🔑</span>
+                                        <span>{t('login_access')}</span>
+                                    </Link>
+                                    <Link
+                                        href={route('register')}
+                                        className="w-full sm:w-auto px-7 py-4 rounded-2xl font-extrabold text-sm border-2 border-slate-300 dark:border-slate-700 hover:border-[#11508f] dark:hover:border-[#11508f] bg-white/90 dark:bg-slate-900/90 text-slate-900 dark:text-white transition shadow-md flex items-center justify-center gap-2"
+                                    >
+                                        <span>✨</span>
+                                        <span>{t('create_account')}</span>
+                                    </Link>
+                                </>
                             )}
                         </div>
 

@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('objet_achat');
             $table->string('numero_achat')->unique();
-            $table->string('type_achat')->default('Marché'); // Marché, Bon de commande, Consultation, Contrat cadre
+            $table->string('type_achat')->default('Marché'); // Marché, Bon de commande
             $table->date('date_achat');
             $table->string('statut')->default('En cours'); // En cours, Validé, Livré partiellement, Soldé, Annulé
             $table->foreignId('fournisseur_id')->constrained('fournisseurs')->onDelete('restrict');

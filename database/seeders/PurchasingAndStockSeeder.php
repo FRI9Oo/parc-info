@@ -494,13 +494,13 @@ class PurchasingAndStockSeeder extends Seeder
         );
 
         // ------------------------------------------------------------------
-        // DOSSIER ACHAT 4 : Consultation C-2026/03 (Ordinateurs ThinkPad & Apple)
+        // DOSSIER ACHAT 4 : Bon de Commande BC-2026/04 (Ordinateurs ThinkPad & Apple)
         // ------------------------------------------------------------------
         $achat4 = Achat::firstOrCreate(
-            ['numero_achat' => 'C-2026/03'],
+            ['numero_achat' => 'BC-2026/04'],
             [
                 'objet_achat' => 'Fourniture de laptops ultraportables pour la direction et développeurs',
-                'type_achat' => 'Consultation',
+                'type_achat' => 'Bon de commande',
                 'date_achat' => '2026-08-01',
                 'statut' => 'En cours',
                 'fournisseur_id' => $fournSybios->id,

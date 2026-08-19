@@ -94,6 +94,13 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
+        // Recent Purchases & Orders Overview
+        $recentAchats = Achat::with('fournisseur')
+            ->orderByDesc('date_achat')
+            ->orderByDesc('id')
+            ->limit(5)
+            ->get();
+
         return Inertia::render('Dashboard', [
             'stats' => [
                 'directions' => Direction::count(),
@@ -121,6 +128,7 @@ class DashboardController extends Controller
                 ->orderByDesc('id')
                 ->limit(6)
                 ->get(),
+            'recentAchats' => $recentAchats,
             'categoriesBreakdown' => $categoriesBreakdown,
             'longStandingAffectations' => $longStandingAffectations,
             'recentAudits' => $recentAudits,

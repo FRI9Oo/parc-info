@@ -371,8 +371,6 @@ export default function Index({ achats = [], fournisseurs = [] }) {
                             >
                                 <option value="Marché">Marché</option>
                                 <option value="Bon de commande">Bon de commande</option>
-                                <option value="Consultation">Consultation</option>
-                                <option value="Contrat cadre">Contrat cadre</option>
                             </select>
                         </div>
                     </div>
@@ -436,23 +434,6 @@ export default function Index({ achats = [], fournisseurs = [] }) {
                         </div>
                     </div>
 
-                    <div>
-                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                            {t('status')} *
-                        </label>
-                        <select
-                            value={createForm.data.statut}
-                            onChange={(e) => createForm.setData('statut', e.target.value)}
-                            className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2 bg-slate-50 dark:bg-slate-900 dark:text-white"
-                        >
-                            <option value="En cours">En cours</option>
-                            <option value="Validé">Validé</option>
-                            <option value="Livré partiellement">Livré partiellement</option>
-                            <option value="Soldé">Soldé</option>
-                            <option value="Annulé">Annulé</option>
-                        </select>
-                    </div>
-
                     <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
                         <button
                             type="button"
@@ -503,8 +484,6 @@ export default function Index({ achats = [], fournisseurs = [] }) {
                             >
                                 <option value="Marché">Marché</option>
                                 <option value="Bon de commande">Bon de commande</option>
-                                <option value="Consultation">Consultation</option>
-                                <option value="Contrat cadre">Contrat cadre</option>
                             </select>
                         </div>
                     </div>

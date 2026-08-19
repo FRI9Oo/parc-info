@@ -15,6 +15,13 @@ export default function Index({ factures = [], achats = [] }) {
 
     const { t } = useLanguage();
     const [searchQuery, setSearchQuery] = useState('');
+    const [achatFilter, setAchatFilter] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('achat_id') || 'all';
+        }
+        return 'all';
+    });
     const [editingFacture, setEditingFacture] = useState(null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
@@ -23,7 +30,7 @@ export default function Index({ factures = [], achats = [] }) {
         date_facture: new Date().toISOString().split('T')[0],
         montant_ht: '',
         taux_tva: 20,
-        achat_id: '',
+        achat_id: achatFilter !== 'all' ? achatFilter : '',
     });
 
     const editForm = useForm({
@@ -35,15 +42,21 @@ export default function Index({ factures = [], achats = [] }) {
     });
 
     const filteredFactures = useMemo(() => {
-        if (!searchQuery.trim()) return factures;
-        const q = searchQuery.toLowerCase().trim();
-        return factures.filter(
-            (f) =>
-                f.numero_facture?.toLowerCase().includes(q) ||
-                f.achat?.numero_achat?.toLowerCase().includes(q) ||
-                f.achat?.fournisseur?.nom_fournisseur?.toLowerCase().includes(q)
-        );
-    }, [factures, searchQuery]);
+        return factures.filter((f) => {
+            if (achatFilter !== 'all' && String(f.achat_id) !== String(achatFilter)) {
+                return false;
+            }
+            if (searchQuery.trim()) {
+                const q = searchQuery.toLowerCase().trim();
+                const matchNum = f.numero_facture?.toLowerCase().includes(q);
+                const matchAchat = f.achat?.numero_achat?.toLowerCase().includes(q);
+                const matchObj = f.achat?.objet_achat?.toLowerCase().includes(q);
+                const matchFourn = f.achat?.fournisseur?.nom_fournisseur?.toLowerCase().includes(q);
+                return matchNum || matchAchat || matchObj || matchFourn;
+            }
+            return true;
+        });
+    }, [factures, searchQuery, achatFilter]);
 
     const {
         currentPage,
@@ -53,15 +66,15 @@ export default function Index({ factures = [], achats = [] }) {
         totalItems,
         totalPages,
         paginatedItems,
-    } = usePagination(filteredFactures, 10, [searchQuery]);
+    } = usePagination(filteredFactures, 10, [searchQuery, achatFilter]);
 
     // KPI aggregates
     const kpiTotalHt = useMemo(() => {
-        return factures.reduce((acc, f) => acc + (parseFloat(f.montant_ht) || 0), 0);
-    }, [factures]);
+        return filteredFactures.reduce((acc, f) => acc + (parseFloat(f.montant_ht) || 0), 0);
+    }, [filteredFactures]);
     const kpiTotalTtc = useMemo(() => {
-        return factures.reduce((acc, f) => acc + (parseFloat(f.montant_ttc) || 0), 0);
-    }, [factures]);
+        return filteredFactures.reduce((acc, f) => acc + (parseFloat(f.montant_ttc) || 0), 0);
+    }, [filteredFactures]);
 
     const handleCreate = (e) => {
         e.preventDefault();
@@ -98,6 +111,11 @@ export default function Index({ factures = [], achats = [] }) {
         }
     };
 
+    const selectedAchatObject = useMemo(() => {
+        if (achatFilter === 'all') return null;
+        return achats.find((a) => String(a.id) === String(achatFilter));
+    }, [achats, achatFilter]);
+
     return (
         <AuthenticatedLayout>
             <Head title={t('factures')} />
@@ -121,6 +139,9 @@ export default function Index({ factures = [], achats = [] }) {
                                 onClick={() => {
                                     setIsCreateModalOpen(true);
                                     createForm.reset();
+                                    if (achatFilter !== 'all') {
+                                        createForm.setData('achat_id', achatFilter);
+                                    }
                                     createForm.clearErrors();
                                 }}
                                 className="btn-zellij px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-2 shadow-md shadow-emerald-600/20"
@@ -135,10 +156,10 @@ export default function Index({ factures = [], achats = [] }) {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div className="lux-card p-5 border border-slate-200/80 dark:border-slate-800">
                             <div className="text-2xl font-extrabold text-slate-900 dark:text-white">
-                                {factures.length}
+                                {filteredFactures.length} {achatFilter !== 'all' ? <span className="text-xs font-normal text-slate-400">/ {factures.length}</span> : null}
                             </div>
                             <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mt-1">
-                                {t('factures')} enregistrées
+                                {t('factures')} {achatFilter !== 'all' ? 'filtrées' : 'enregistrées'}
                             </div>
                         </div>
 
@@ -161,21 +182,66 @@ export default function Index({ factures = [], achats = [] }) {
                         </div>
                     </div>
 
+                    {/* Active Achat Filter Banner */}
+                    {selectedAchatObject && (
+                        <div className="bg-indigo-50/80 dark:bg-indigo-950/40 p-4 rounded-2xl border border-indigo-200 dark:border-indigo-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                            <div className="flex items-center gap-3">
+                                <span className="text-xl">🛒</span>
+                                <div>
+                                    <span className="font-extrabold text-indigo-900 dark:text-indigo-200">
+                                        Filtré par Achat / Marché : {selectedAchatObject.numero_achat} — {selectedAchatObject.objet_achat}
+                                    </span>
+                                    <p className="text-[11px] text-indigo-700 dark:text-indigo-400 mt-0.5">
+                                        Fournisseur : {selectedAchatObject.fournisseur?.nom_fournisseur || '—'}
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setAchatFilter('all')}
+                                className="text-xs text-indigo-600 dark:text-indigo-400 font-bold hover:underline self-start sm:self-center"
+                            >
+                                ✕ {t('all_achats')}
+                            </button>
+                        </div>
+                    )}
+
                     {/* Invoices Table Card */}
                     <div className="lux-card p-6 border border-slate-200/80 dark:border-slate-800 space-y-4">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                            <h2 className="text-sm font-extrabold text-slate-900 dark:text-white">
-                                {t('factures')} ({filteredFactures.length})
-                            </h2>
-                            <div className="w-full sm:w-64">
-                                <input
-                                    type="text"
-                                    placeholder={t('search_placeholder')}
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2 bg-slate-50/50 dark:bg-slate-900 dark:text-white focus:ring-1 focus:ring-indigo-500"
-                                />
-                            </div>
+                        
+                        {/* Filters & Search Row */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <input
+                                type="text"
+                                placeholder={t('search_placeholder')}
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2 bg-slate-50/50 dark:bg-slate-900 dark:text-white focus:ring-1 focus:ring-indigo-500"
+                            />
+
+                            <select
+                                value={achatFilter}
+                                onChange={(e) => setAchatFilter(e.target.value)}
+                                className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2 bg-slate-50/50 dark:bg-slate-900 dark:text-white focus:ring-1 focus:ring-indigo-500"
+                            >
+                                <option value="all">-- {t('filter_achat')} ({t('all')}) --</option>
+                                {achats.map((a) => (
+                                    <option key={a.id} value={a.id}>
+                                        🛒 {a.numero_achat} - {a.objet_achat}
+                                    </option>
+                                ))}
+                            </select>
+
+                            {(searchQuery || achatFilter !== 'all') && (
+                                <button
+                                    onClick={() => {
+                                        setSearchQuery('');
+                                        setAchatFilter('all');
+                                    }}
+                                    className="text-xs text-indigo-600 dark:text-indigo-400 font-bold hover:underline self-center text-left sm:text-right"
+                                >
+                                    {t('reset_filters')}
+                                </button>
+                            )}
                         </div>
 
                         <div className="overflow-x-auto">
@@ -202,9 +268,10 @@ export default function Index({ factures = [], achats = [] }) {
                                                 {f.achat ? (
                                                     <Link
                                                         href={route('achats.show', f.achat.id)}
-                                                        className="font-mono font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
+                                                        className="font-mono font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
                                                     >
-                                                        🛒 {f.achat.numero_achat}
+                                                        <span>🛒</span>
+                                                        <span>{f.achat.numero_achat}</span>
                                                     </Link>
                                                 ) : (
                                                     '—'
@@ -230,7 +297,7 @@ export default function Index({ factures = [], achats = [] }) {
                                                     {canEdit && (
                                                         <button
                                                             onClick={() => openEditModal(f)}
-                                                            className="px-2.5 py-1 text-slate-600 hover:text-slate-800 dark:text-slate-300 hover:bg-slate-100 rounded-lg transition text-xs font-bold"
+                                                            className="px-2.5 py-1 text-slate-600 hover:text-slate-800 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition text-xs font-bold"
                                                         >
                                                             ✏️ {t('edit')}
                                                         </button>
@@ -238,7 +305,7 @@ export default function Index({ factures = [], achats = [] }) {
                                                     {canDelete && (
                                                         <button
                                                             onClick={() => handleDelete(f.id, f.numero_facture)}
-                                                            className="px-2.5 py-1 text-rose-600 hover:text-rose-800 dark:text-rose-400 hover:bg-rose-50 rounded-lg transition text-xs font-bold"
+                                                            className="px-2.5 py-1 text-rose-600 hover:text-rose-800 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition text-xs font-bold"
                                                         >
                                                             🗑️ {t('delete')}
                                                         </button>
@@ -283,12 +350,17 @@ export default function Index({ factures = [], achats = [] }) {
 
                     <div>
                         <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                            {t('achats')} *
+                            {t('achats')} / Marché *
                         </label>
                         <select
                             value={createForm.data.achat_id}
-                            onChange={(e) => createForm.setData('achat_id', e.target.value)}
-                            className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2 bg-slate-50 dark:bg-slate-900 dark:text-white"
+                            onChange={(e) => {
+                                createForm.setData('achat_id', e.target.value);
+                                createForm.clearErrors('achat_id');
+                            }}
+                            className={`w-full text-xs rounded-xl border px-3.5 py-2 bg-slate-50 dark:bg-slate-900 dark:text-white ${
+                                createForm.errors.achat_id ? 'border-rose-500 bg-rose-50/20' : 'border-slate-200 dark:border-slate-700'
+                            }`}
                             required
                         >
                             <option value="">-- {t('achats')} --</option>
@@ -298,6 +370,9 @@ export default function Index({ factures = [], achats = [] }) {
                                 </option>
                             ))}
                         </select>
+                        {createForm.errors.achat_id && (
+                            <p className="text-[11px] text-rose-600 mt-1 font-semibold">⚠️ {createForm.errors.achat_id}</p>
+                        )}
                     </div>
 
                     <div>
@@ -311,18 +386,14 @@ export default function Index({ factures = [], achats = [] }) {
                                 createForm.setData('numero_facture', e.target.value);
                                 createForm.clearErrors('numero_facture');
                             }}
-                            placeholder="Ex: FACT-2026-001"
-                            className={`w-full text-xs rounded-xl border px-3.5 py-2 bg-slate-50 dark:bg-slate-900 dark:text-white transition ${
-                                createForm.errors.numero_facture
-                                    ? 'border-rose-500 ring-1 ring-rose-400 bg-rose-50/30'
-                                    : 'border-slate-200 dark:border-slate-700'
+                            placeholder="Ex: FACT-2026-088"
+                            className={`w-full text-xs rounded-xl border px-3.5 py-2 bg-slate-50 dark:bg-slate-900 dark:text-white ${
+                                createForm.errors.numero_facture ? 'border-rose-500 bg-rose-50/20' : 'border-slate-200 dark:border-slate-700'
                             }`}
                             required
                         />
                         {createForm.errors.numero_facture && (
-                            <p className="text-[11px] text-rose-600 mt-1 font-semibold">
-                                ⚠️ {createForm.errors.numero_facture}
-                            </p>
+                            <p className="text-[11px] text-rose-600 mt-1 font-semibold">⚠️ {createForm.errors.numero_facture}</p>
                         )}
                     </div>
 
@@ -351,7 +422,7 @@ export default function Index({ factures = [], achats = [] }) {
                                 value={createForm.data.montant_ht}
                                 onChange={(e) => createForm.setData('montant_ht', e.target.value)}
                                 placeholder="0.00"
-                                className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2 bg-slate-50 dark:bg-slate-900 dark:text-white"
+                                className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2 bg-slate-50 dark:bg-slate-900 dark:text-white font-mono"
                                 required
                             />
                         </div>
@@ -366,25 +437,34 @@ export default function Index({ factures = [], achats = [] }) {
                                 max="100"
                                 value={createForm.data.taux_tva}
                                 onChange={(e) => createForm.setData('taux_tva', parseInt(e.target.value) || 0)}
-                                className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2 bg-slate-50 dark:bg-slate-900 dark:text-white"
+                                className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2 bg-slate-50 dark:bg-slate-900 dark:text-white font-mono"
                             />
                         </div>
                     </div>
 
-                    <div className="flex justify-end gap-2 pt-3 border-t">
+                    {createForm.data.montant_ht && (
+                        <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-200 dark:border-emerald-800 text-xs">
+                            <span className="text-emerald-700 dark:text-emerald-300 font-bold block">{t('facture_montant_ttc')} estimé :</span>
+                            <span className="text-base font-extrabold text-emerald-800 dark:text-emerald-200 font-mono">
+                                {(parseFloat(createForm.data.montant_ht) * (1 + (parseInt(createForm.data.taux_tva || 0) / 100))).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} DH
+                            </span>
+                        </div>
+                    )}
+
+                    <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
                         <button
                             type="button"
                             onClick={() => setIsCreateModalOpen(false)}
-                            className="px-4 py-2 text-xs font-bold text-slate-600 bg-slate-100 rounded-xl"
+                            className="px-4 py-2 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition"
                         >
                             {t('cancel')}
                         </button>
                         <button
                             type="submit"
                             disabled={createForm.processing}
-                            className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold rounded-xl shadow"
+                            className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold rounded-xl transition shadow-md shadow-emerald-600/20"
                         >
-                            {t('add')}
+                            {createForm.processing ? t('loading') : t('create')}
                         </button>
                     </div>
                 </form>
@@ -394,12 +474,12 @@ export default function Index({ factures = [], achats = [] }) {
             <Modal show={editingFacture !== null} onClose={() => setEditingFacture(null)} maxWidth="sm">
                 <form onSubmit={handleUpdate} className="p-6 space-y-4">
                     <h2 className="text-base font-extrabold text-slate-900 dark:text-white border-b pb-2">
-                        Modifier la Facture
+                        {t('edit')} {t('factures')}
                     </h2>
 
                     <div>
                         <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                            {t('achats')} *
+                            {t('achats')} / Marché *
                         </label>
                         <select
                             value={editForm.data.achat_id}
@@ -452,7 +532,7 @@ export default function Index({ factures = [], achats = [] }) {
                                 min="0"
                                 value={editForm.data.montant_ht}
                                 onChange={(e) => editForm.setData('montant_ht', e.target.value)}
-                                className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2 bg-slate-50 dark:bg-slate-900 dark:text-white"
+                                className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2 bg-slate-50 dark:bg-slate-900 dark:text-white font-mono"
                                 required
                             />
                         </div>
@@ -467,12 +547,12 @@ export default function Index({ factures = [], achats = [] }) {
                                 max="100"
                                 value={editForm.data.taux_tva}
                                 onChange={(e) => editForm.setData('taux_tva', parseInt(e.target.value) || 0)}
-                                className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2 bg-slate-50 dark:bg-slate-900 dark:text-white"
+                                className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2 bg-slate-50 dark:bg-slate-900 dark:text-white font-mono"
                             />
                         </div>
                     </div>
 
-                    <div className="flex justify-end gap-2 pt-3 border-t">
+                    <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
                         <button
                             type="button"
                             onClick={() => setEditingFacture(null)}
@@ -483,9 +563,9 @@ export default function Index({ factures = [], achats = [] }) {
                         <button
                             type="submit"
                             disabled={editForm.processing}
-                            className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold rounded-xl shadow"
+                            className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold rounded-xl"
                         >
-                            {t('save')}
+                            {editForm.processing ? t('loading') : t('save')}
                         </button>
                     </div>
                 </form>

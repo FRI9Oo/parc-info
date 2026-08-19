@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Achat;
 use App\Models\AuditLog;
 use App\Models\BordereauMateriel;
 use App\Models\LivraisonStock;
@@ -27,9 +28,12 @@ class LivraisonStockController extends Controller
             ->orderByDesc('id')
             ->get();
 
+        $achats = Achat::with('fournisseur')->orderBy('numero_achat')->get();
+
         return Inertia::render('Livraisons/Index', [
             'livraisons' => $livraisons,
             'bordereaux' => $bordereaux,
+            'achats' => $achats,
         ]);
     }
 
